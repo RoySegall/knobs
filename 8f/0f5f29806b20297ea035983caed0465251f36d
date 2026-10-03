@@ -1,0 +1,35 @@
+Knobs/Debug/PerfProbe.swift
+  s_7c21c36c2cbc9b::t_8aa1a315def23f 42-62,64
+Knobs/KnobsApp.swift
+  s_7c21c36c2cbc9b::t_b71f03f3772d72 8,12,16,23,37-43
+Knobs/Models/ExportModel.swift
+  s_7c21c36c2cbc9b::t_077d3af8a64911 3-73,75-129
+Knobs/Models/LibraryModel.swift
+  s_7c21c36c2cbc9b::t_dad9ae71333759 10-11,40,46-53
+Knobs/Views/ContentView.swift
+  s_7c21c36c2cbc9b::t_bd8b5688b40001 8,27,30-37,50,72-91,93-99
+Knobs/Views/ExportSheet.swift
+  s_7c21c36c2cbc9b::t_f192e58cc41e80 1-71
+Knobs/Views/FilmstripView.swift
+  s_7c21c36c2cbc9b::t_03c9bb242309de 11,30,45-53
+KnobsKit/Engine/RenderEngine.swift
+  s_7c21c36c2cbc9b::t_e93d8a52431efd 36-49,157-160
+KnobsKitTests/EngineTests.swift
+  s_7c21c36c2cbc9b::t_597b6a176cea89 91-108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8f0f5f29806b20297ea035983caed0465251f36d",
+  "prompts": {},
+  "sessions": {
+    "s_7c21c36c2cbc9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6cd0b42-41dd-4208-8c73-230afb58eb8a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Roy Segall <roy@segall.io>"
+    }
+  }
+}
