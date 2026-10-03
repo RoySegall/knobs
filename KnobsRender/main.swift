@@ -138,7 +138,13 @@ do {
 let request = RenderRequest(maxPixelSize: size)
 var image = engine.image(photo: photo, document: document, request: request)
 if sideBySide {
-    let original = engine.image(photo: photo, document: EditDocument(), request: request)
+    // Each half is rendered on its own: two RAW decoders in one Core Image graph render one of them black.
+    func flattened(_ image: CIImage) -> CIImage {
+        engine.context.createCGImage(image, from: image.extent, format: .RGBAh, colorSpace: CGColorSpace(name: CGColorSpace.extendedLinearSRGB)!)
+            .map { CIImage(cgImage: $0).transformed(by: CGAffineTransform(translationX: image.extent.minX, y: image.extent.minY)) } ?? image
+    }
+    image = flattened(image)
+    let original = flattened(engine.image(photo: photo, document: EditDocument(), request: request))
     let shifted = image.transformed(by: CGAffineTransform(translationX: original.extent.maxX + 16 - image.extent.minX, y: 0))
     let canvas = original.extent.union(shifted.extent)
     image = shifted.composited(over: original).composited(over: CIImage(color: .black).cropped(to: canvas))
