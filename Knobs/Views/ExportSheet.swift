@@ -5,16 +5,18 @@ struct ExportSheet: View {
     @Bindable var exporter: ExportModel
     let library: LibraryModel
     let editor: EditorModel
+    /// The photo "single" means: the open one, or the one right-clicked in the filmstrip.
+    let photo: URL?
     @State var scope: ExportModel.Scope
 
     var body: some View {
-        let photos = exporter.photos(scope: scope, library: library, editor: editor)
-        let edited = exporter.photos(scope: .edited, library: library, editor: editor).count
+        let photos = exporter.photos(scope: scope, photo: photo, library: library)
+        let edited = exporter.photos(scope: .edited, photo: photo, library: library).count
         VStack(alignment: .leading, spacing: 14) {
             Text("Export").font(.headline)
             Form {
                 Picker("Photos", selection: $scope) {
-                    Text("This photo").tag(ExportModel.Scope.current)
+                    Text(photo?.lastPathComponent ?? "This photo").tag(ExportModel.Scope.single)
                     Text("Edited photos (\(edited))").tag(ExportModel.Scope.edited)
                 }
                 .pickerStyle(.segmented)
@@ -59,7 +61,7 @@ struct ExportSheet: View {
                 Button("Cancel") { exporter.presented = nil }
                     .keyboardShortcut(.cancelAction)
                 Button(photos.count == 1 ? "Export" : "Export \(photos.count) Photos") {
-                    exporter.start(scope: scope, library: library, editor: editor)
+                    exporter.start(scope: scope, photo: photo, library: library, editor: editor)
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(photos.isEmpty)

@@ -5,11 +5,17 @@ import Observation
 /// Export settings and the export in progress. Settings persist between launches.
 @Observable
 final class ExportModel {
-    enum Scope: String, Identifiable {
-        case current
+    enum Scope: Hashable {
+        /// One photo, given with the request.
+        case single
+        /// Every photo in the folder that has edits.
         case edited
+    }
 
-        var id: String { rawValue }
+    struct Request: Identifiable {
+        let id = UUID()
+        let photo: URL?
+        let scope: Scope
     }
 
     enum Phase {
@@ -21,7 +27,7 @@ final class ExportModel {
     /// Long edges offered in the sheet; 0 is full resolution.
     static let sizes = [0, 4096, 3840, 2048, 1080]
 
-    var presented: Scope?
+    var presented: Request?
     var format: ExportFormat {
         didSet { defaults.set(format.rawValue, forKey: Key.format) }
     }
@@ -54,9 +60,13 @@ final class ExportModel {
         folder = defaults.string(forKey: Key.folder).map { URL(fileURLWithPath: $0, isDirectory: true) }
     }
 
-    func photos(scope: Scope, library: LibraryModel, editor: EditorModel) -> [URL] {
+    func present(scope: Scope, photo: URL?) {
+        presented = Request(photo: photo, scope: scope)
+    }
+
+    func photos(scope: Scope, photo: URL?, library: LibraryModel) -> [URL] {
         switch scope {
-        case .current: editor.photo.map { [$0.url] } ?? []
+        case .single: photo.map { [$0] } ?? []
         case .edited: library.items.filter(library.edited.contains)
         }
     }
@@ -75,9 +85,9 @@ final class ExportModel {
         folder = url
     }
 
-    func start(scope: Scope, library: LibraryModel, editor: EditorModel) {
+    func start(scope: Scope, photo: URL?, library: LibraryModel, editor: EditorModel) {
         editor.flushSave()
-        let photos = photos(scope: scope, library: library, editor: editor)
+        let photos = photos(scope: scope, photo: photo, library: library)
         guard let destination = destination(for: photos), !photos.isEmpty else { return }
         presented = nil
         let engine = editor.engine

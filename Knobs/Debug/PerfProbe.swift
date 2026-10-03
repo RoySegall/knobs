@@ -1,4 +1,6 @@
+import CoreImage
 import Foundation
+import ImageIO
 import KnobsKit
 import QuartzCore
 
@@ -49,7 +51,7 @@ enum PerfProbe {
         exporter.longEdge = 1080
         exporter.format = .jpeg
         let started = CACurrentMediaTime()
-        exporter.start(scope: .edited, library: library, editor: editor)
+        exporter.start(scope: .edited, photo: nil, library: library, editor: editor)
         while true {
             try? await Task.sleep(for: .milliseconds(200))
             if case .finished = exporter.phase { break }
@@ -58,6 +60,49 @@ enum PerfProbe {
         let report = "\(exporter.phase) in \(String(format: "%.1f", CACurrentMediaTime() - started)) s · edited \(library.edited.count)"
         try? report.write(to: logURL, atomically: true, encoding: .utf8)
         exporter.dismiss()
+    }
+
+    /// Removes, restores and trashes throwaway copies in a temp folder, then puts the settings back.
+    static func runLibrary() {
+        guard let logURL, mode == "library" else { return }
+        let defaults = UserDefaults.standard
+        let savedFolder = defaults.string(forKey: "lastFolder")
+        let savedRemoved = defaults.dictionary(forKey: "removedPhotos")
+        let folder = logURL.appendingPathExtension("library")
+        try? FileManager.default.removeItem(at: folder)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let names = ["a.jpg", "b.jpg", "c.jpg"]
+        let pixels = CIContext().createCGImage(CIImage(color: .gray).cropped(to: CGRect(x: 0, y: 0, width: 8, height: 8)), from: CGRect(x: 0, y: 0, width: 8, height: 8))!
+        for name in names {
+            let destination = CGImageDestinationCreateWithURL(folder.appendingPathComponent(name) as CFURL, "public.jpeg" as CFString, 1, nil)!
+            CGImageDestinationAddImage(destination, pixels, nil)
+            CGImageDestinationFinalize(destination)
+        }
+        let a = folder.appendingPathComponent("a.jpg")
+        let b = folder.appendingPathComponent("b.jpg")
+        let library = LibraryModel()
+        library.open(folder: folder, select: b)
+        var log: [String] = []
+        func state(_ step: String) {
+            log.append("\(step): \(library.items.map(\.lastPathComponent)) selected \(library.selection?.lastPathComponent ?? "-") removed \(library.hasRemoved)")
+        }
+        state("open")
+        library.remove(url: b)
+        state("remove b")
+        library.open(folder: folder)
+        state("reopen")
+        library.restoreRemoved()
+        state("restore")
+        do {
+            try library.moveToTrash(url: a)
+            state("trash a")
+            log.append("a still on disk: \(FileManager.default.fileExists(atPath: a.path))")
+        } catch {
+            log.append("trash failed: \(error)")
+        }
+        defaults.set(savedFolder, forKey: "lastFolder")
+        defaults.set(savedRemoved, forKey: "removedPhotos")
+        try? log.joined(separator: "\n").write(to: logURL, atomically: true, encoding: .utf8)
     }
 
     static func run(editor: EditorModel) async {

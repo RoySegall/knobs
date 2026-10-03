@@ -35,12 +35,15 @@ struct KnobsCommands: Commands {
             Button("Open Folder…") { library.chooseFolder() }
                 .keyboardShortcut("o")
             Divider()
-            Button("Export…") { exporter.presented = .current }
+            Button("Export…") { exporter.present(scope: .single, photo: editor.photo?.url) }
                 .keyboardShortcut("e")
                 .disabled(editor.photo == nil)
-            Button("Export Edited Photos…") { exporter.presented = .edited }
+            Button("Export Edited Photos…") { exporter.present(scope: .edited, photo: editor.photo?.url) }
                 .keyboardShortcut("e", modifiers: [.command, .shift])
                 .disabled(library.edited.isEmpty)
+            Divider()
+            Button("Restore Removed Photos") { library.restoreRemoved() }
+                .disabled(!library.hasRemoved)
         }
         CommandMenu("Photo") {
             Button("Previous Photo") { library.step(by: -1) }

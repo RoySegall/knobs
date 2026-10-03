@@ -76,6 +76,31 @@ final class EditorModel {
         }
     }
 
+    /// The photo on screen or on its way there.
+    var openURL: URL? {
+        switch state {
+        case .empty: nil
+        case .loading(let url): url
+        case .ready(let photo): photo.url
+        case .failed(let url, _): url
+        }
+    }
+
+    /// Leaves the photo. `saving: false` drops pending edits, for a photo headed to the Trash.
+    func close(saving: Bool) {
+        if saving {
+            flushSave()
+        } else {
+            saveTask?.cancel()
+            saveTask = nil
+        }
+        tool = .none
+        state = .empty
+        session = nil
+        previewImage = nil
+        document = EditDocument()
+    }
+
     func value(param: KnobParam, plugin: any KnobPlugin) -> KnobValue {
         param.resolve(document.values(for: plugin.id)[param.id])
     }

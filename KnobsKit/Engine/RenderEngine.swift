@@ -24,6 +24,14 @@ public enum ExportFormat: String, Sendable, CaseIterable {
     case heic
     case tiff
 
+    var typeIdentifier: String {
+        switch self {
+        case .jpeg: UTType.jpeg.identifier
+        case .heic: UTType.heic.identifier
+        case .tiff: UTType.tiff.identifier
+        }
+    }
+
     public var fileExtension: String {
         switch self {
         case .jpeg: "jpg"
@@ -154,16 +162,32 @@ public final class RenderEngine: Sendable {
         return context.createCGImage(image, from: image.extent.integral, format: .RGBA8, colorSpace: displayColorSpace)
     }
 
+    public enum ExportError: Error {
+        case render
+        case write(URL)
+    }
+
+    /// Writes through ImageIO rather than Core Image's writers so the original's metadata can come along.
     public func export(photo: Photo, document: EditDocument, options: ExportOptions, to url: URL) throws {
         let image = image(photo: photo, document: document, request: RenderRequest(maxPixelSize: options.maxPixelSize))
-        let quality = [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: options.quality]
-        switch options.format {
-        case .jpeg:
-            try context.writeJPEGRepresentation(of: image, to: url, colorSpace: displayColorSpace, options: quality)
-        case .heic:
-            try context.writeHEIFRepresentation(of: image, to: url, format: .RGBA8, colorSpace: displayColorSpace, options: quality)
-        case .tiff:
-            try context.writeTIFFRepresentation(of: image, to: url, format: .RGBA16, colorSpace: displayColorSpace)
+        let extent = image.extent.integral
+        let depth: CIFormat = options.format == .tiff ? .RGBA16 : .RGBA8
+        guard let rendered = context.createCGImage(image, from: extent, format: depth, colorSpace: displayColorSpace) else {
+            throw ExportError.render
         }
+        guard let destination = CGImageDestinationCreateWithURL(url as CFURL, options.format.typeIdentifier as CFString, 1, nil) else {
+            throw ExportError.write(url)
+        }
+        var properties = ExportMetadata.properties(from: photo.url, size: extent.size)
+        switch options.format {
+        case .jpeg, .heic:
+            properties[kCGImageDestinationLossyCompressionQuality] = options.quality
+        case .tiff:
+            var tiff = properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any] ?? [:]
+            tiff[kCGImagePropertyTIFFCompression] = 5
+            properties[kCGImagePropertyTIFFDictionary] = tiff
+        }
+        CGImageDestinationAddImage(destination, rendered, properties as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { throw ExportError.write(url) }
     }
 }

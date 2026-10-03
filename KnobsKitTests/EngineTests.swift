@@ -1,5 +1,6 @@
 import CoreImage
 import Foundation
+import ImageIO
 import Testing
 @testable import KnobsKit
 
@@ -90,6 +91,43 @@ struct EngineTests {
 
     @Suite("RenderEngine.export")
     struct Export {
+        /// A JPEG with camera metadata, written sideways (orientation 6) like a portrait phone shot.
+        static func sourceWithMetadata() throws -> URL {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID()).jpg")
+            let context = CIContext()
+            let pixels = try #require(context.createCGImage(TestImages.gray(level: 0.4, size: 40), from: CGRect(x: 0, y: 0, width: 40, height: 20)))
+            let destination = try #require(CGImageDestinationCreateWithURL(url as CFURL, "public.jpeg" as CFString, 1, nil))
+            let properties: [CFString: Any] = [
+                kCGImagePropertyOrientation: 6,
+                kCGImagePropertyExifDictionary: [kCGImagePropertyExifDateTimeOriginal: "2026:09:30 18:12:44", kCGImagePropertyExifFNumber: 2.8],
+                kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFMake: "SONY", kCGImagePropertyTIFFModel: "ILCE-7M4"],
+                kCGImagePropertyGPSDictionary: [kCGImagePropertyGPSLatitude: 32.08, kCGImagePropertyGPSLatitudeRef: "N"],
+            ]
+            CGImageDestinationAddImage(destination, pixels, properties as CFDictionary)
+            #expect(CGImageDestinationFinalize(destination))
+            return url
+        }
+
+        @Test("should carry the original's EXIF, GPS and camera over, upright and with the new size")
+        func metadata() throws {
+            let source = try Export.sourceWithMetadata()
+            let photo = try Photo.load(url: source)
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID()).jpg")
+            try RenderEngine().export(photo: photo, document: EditDocument(), options: ExportOptions(format: .jpeg), to: url)
+
+            let written = try #require(CGImageSourceCreateWithURL(url as CFURL, nil))
+            let properties = try #require(CGImageSourceCopyPropertiesAtIndex(written, 0, nil) as? [CFString: Any])
+            let exif = try #require(properties[kCGImagePropertyExifDictionary] as? [CFString: Any])
+            let tiff = try #require(properties[kCGImagePropertyTIFFDictionary] as? [CFString: Any])
+            let gps = try #require(properties[kCGImagePropertyGPSDictionary] as? [CFString: Any])
+            #expect(exif[kCGImagePropertyExifDateTimeOriginal] as? String == "2026:09:30 18:12:44")
+            #expect(exif[kCGImagePropertyExifPixelXDimension] as? Int == 20)
+            #expect(exif[kCGImagePropertyExifPixelYDimension] as? Int == 40)
+            #expect(tiff[kCGImagePropertyTIFFModel] as? String == "ILCE-7M4")
+            #expect(gps[kCGImagePropertyGPSLatitude] as? Double == 32.08)
+            #expect(properties[kCGImagePropertyOrientation] as? Int == 1)
+        }
+
         @Test("should write the edited photo at the requested size")
         func size() throws {
             let image = TestImages.gray(level: 0.25, size: 64)

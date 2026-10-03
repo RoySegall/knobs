@@ -15,25 +15,28 @@ struct ContentView: View {
                 InspectorView(editor: editor)
             }
             Divider()
-            FilmstripView(library: library)
+            FilmstripView(library: library, editor: editor, exporter: exporter)
         }
         .background(Color(white: 0.09))
         .navigationTitle(library.selection?.lastPathComponent ?? "Knobs")
         .navigationSubtitle(library.folder?.lastPathComponent ?? "")
         .task(id: library.selection) {
-            if let url = library.selection {
-                await editor.open(url: url)
-                await PerfProbe.run(editor: editor)
-                await PerfProbe.runExport(library: library, editor: editor, exporter: exporter)
+            guard let url = library.selection else {
+                editor.close(saving: true)
+                return
             }
+            await editor.open(url: url)
+            await PerfProbe.run(editor: editor)
+            await PerfProbe.runExport(library: library, editor: editor, exporter: exporter)
+            PerfProbe.runLibrary()
         }
         .onChange(of: editor.document) { _, document in
             if let url = editor.photo?.url {
                 library.mark(url: url, edited: !document.isEmpty)
             }
         }
-        .sheet(item: $exporter.presented) { scope in
-            ExportSheet(exporter: exporter, library: library, editor: editor, scope: scope)
+        .sheet(item: $exporter.presented) { request in
+            ExportSheet(exporter: exporter, library: library, editor: editor, photo: request.photo, scope: request.scope)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
             editor.flushSave()
@@ -69,7 +72,7 @@ struct ContentView: View {
                 .help("Before / after (\\)")
             Button("Reset All", systemImage: "arrow.counterclockwise") { editor.resetAll() }
                 .disabled(editor.document.isEmpty)
-            Button("Export", systemImage: "square.and.arrow.up") { exporter.presented = .current }
+            Button("Export", systemImage: "square.and.arrow.up") { exporter.present(scope: .single, photo: editor.photo?.url) }
                 .help("Export (⌘E)")
                 .disabled(editor.photo == nil)
         }
