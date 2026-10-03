@@ -13,10 +13,19 @@ struct InspectorView: View {
     }
 
     var body: some View {
+        // The one read of the document here. Sections get value snapshots and compare them, so an edit
+        // redraws only the section it touched instead of every control.
+        let document = editor.document
         ScrollView {
             VStack(spacing: 0) {
                 ForEach(panels, id: \.panel.id) { group in
-                    PanelSection(panel: group.panel, plugins: group.plugins, editor: editor)
+                    PanelSection(
+                        panel: group.panel,
+                        plugins: group.plugins,
+                        values: Dictionary(uniqueKeysWithValues: group.plugins.map { ($0.id, document.values(for: $0.id)) }),
+                        editor: editor
+                    )
+                    .equatable()
                     Divider()
                 }
             }
@@ -26,15 +35,18 @@ struct InspectorView: View {
     }
 }
 
-struct PanelSection: View {
+struct PanelSection: View, Equatable {
     let panel: Panel
     let plugins: [any KnobPlugin]
+    /// Each plugin's stored values, by plugin id.
+    let values: [String: [String: KnobValue]]
     let editor: EditorModel
     @AppStorage private var expanded: Bool
 
-    init(panel: Panel, plugins: [any KnobPlugin], editor: EditorModel) {
+    init(panel: Panel, plugins: [any KnobPlugin], values: [String: [String: KnobValue]], editor: EditorModel) {
         self.panel = panel
         self.plugins = plugins
+        self.values = values
         self.editor = editor
         _expanded = AppStorage(wrappedValue: true, "panel.\(panel.id).expanded")
     }
@@ -54,7 +66,7 @@ struct PanelSection: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                if plugins.contains(where: editor.isEdited) {
+                if values.values.contains(where: { !$0.isEmpty }) {
                     Button("Reset \(panel.title)", systemImage: "arrow.counterclockwise") {
                         plugins.forEach(editor.reset)
                     }
@@ -66,7 +78,12 @@ struct PanelSection: View {
             }
             if expanded {
                 ForEach(plugins, id: \.id) { plugin in
-                    PluginSection(plugin: plugin, showsTitle: plugins.count > 1 && plugin.params.filter { $0.presentation == .inspector }.count > 1, editor: editor)
+                    PluginSection(
+                        plugin: plugin,
+                        values: values[plugin.id] ?? [:],
+                        showsTitle: plugins.count > 1 && plugin.params.filter { $0.presentation == .inspector }.count > 1,
+                        editor: editor
+                    )
                 }
             }
         }
@@ -77,6 +94,8 @@ struct PanelSection: View {
 
 struct PluginSection: View {
     let plugin: any KnobPlugin
+    /// A snapshot: reading the editor here would make every control redraw on any edit.
+    let values: [String: KnobValue]
     let showsTitle: Bool
     let editor: EditorModel
 
@@ -102,8 +121,14 @@ struct PluginSection: View {
 
     private func binding(_ param: KnobParam) -> Binding<KnobValue> {
         Binding(
-            get: { editor.value(param: param, plugin: plugin) },
+            get: { param.resolve(values[param.id]) },
             set: { editor.set(value: $0, param: param, plugin: plugin) }
         )
+    }
+}
+
+extension PanelSection {
+    nonisolated static func == (lhs: PanelSection, rhs: PanelSection) -> Bool {
+        lhs.panel == rhs.panel && lhs.values == rhs.values
     }
 }

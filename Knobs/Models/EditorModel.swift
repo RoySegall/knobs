@@ -163,6 +163,10 @@ final class EditorModel {
         matchResolution(now: true)
     }
 
+    var sessionScale: Double {
+        session?.scale ?? 0
+    }
+
     var hasOpenTool: Bool {
         if case .none = tool { false } else { true }
     }
@@ -260,6 +264,7 @@ final class EditorModel {
 
     /// Built off the main thread: the first decode and downscale of a big photo takes a while.
     private func makeSession(photo: Photo) async -> PreviewSession {
+        PerfProbe.sessionBuilds += 1
         let engine = engine
         let size = maxPixelSize(for: photo)
         return await Task.detached(priority: .userInitiated) {
