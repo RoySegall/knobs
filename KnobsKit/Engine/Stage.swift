@@ -13,6 +13,8 @@ public enum Stage: Int, Sendable, CaseIterable, Comparable {
     /// Changes the frame. Runs before effects so vignette and grain follow the crop.
     case geometry
     case effects
+    /// Scene-linear to display rendering, after every edit. A plugin here may take over the highlight roll-off.
+    case output
 
     public static func < (lhs: Stage, rhs: Stage) -> Bool {
         lhs.rawValue < rhs.rawValue

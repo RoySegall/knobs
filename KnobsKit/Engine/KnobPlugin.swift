@@ -24,6 +24,10 @@ public protocol KnobPlugin: Sendable {
 
     /// Must return the input unchanged when every value is at its default.
     func apply(image: CIImage, values: KnobValues, context: RenderContext) -> CIImage
+
+    /// True when `apply` already lands pixels in display range, so the engine skips its highlight roll-off.
+    /// Defaults to false.
+    func rendersDisplay(values: KnobValues, context: RenderContext) -> Bool
 }
 
 extension KnobPlugin {
@@ -36,6 +40,10 @@ extension KnobPlugin {
     }
 
     public func configure(raw: CIRAWFilter, values: KnobValues, context: RenderContext) -> Bool {
+        false
+    }
+
+    public func rendersDisplay(values: KnobValues, context: RenderContext) -> Bool {
         false
     }
 
