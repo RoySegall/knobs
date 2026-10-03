@@ -39,12 +39,15 @@ struct KnobsCommands: Commands {
             Button(editor.isCropping ? "Done Cropping" : "Crop & Straighten") { editor.toggleCrop() }
                 .keyboardShortcut("r", modifiers: [])
                 .disabled(editor.photo == nil)
-            Button("Apply Crop") { editor.commitCrop() }
+            Button(editor.isEditingGradient ? "Done with Graduated Filter" : "Graduated Filter") { editor.toggleGradient() }
+                .keyboardShortcut("g", modifiers: [])
+                .disabled(editor.photo == nil)
+            Button("Apply") { editor.commitTool() }
                 .keyboardShortcut(.return, modifiers: [])
-                .disabled(!editor.isCropping)
-            Button("Cancel Crop") { editor.cancelCrop() }
+                .disabled(!editor.hasOpenTool)
+            Button("Cancel") { editor.cancelTool() }
                 .keyboardShortcut(.escape, modifiers: [])
-                .disabled(!editor.isCropping)
+                .disabled(!editor.hasOpenTool)
             Button("Swap Crop Orientation") { editor.swapCropOrientation() }
                 .keyboardShortcut("x", modifiers: [])
                 .disabled(!editor.isCropping)

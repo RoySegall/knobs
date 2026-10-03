@@ -47,6 +47,13 @@ struct ContentView: View {
             )
             .help("Crop & Straighten (R)")
             .disabled(editor.photo == nil)
+            Toggle(
+                "Graduated Filter",
+                systemImage: "square.tophalf.filled",
+                isOn: Binding(get: { editor.isEditingGradient }, set: { _ in editor.toggleGradient() })
+            )
+            .help("Graduated Filter (G)")
+            .disabled(editor.photo == nil)
             Button(
                 editor.compare == .original ? "Show Edited" : "Show Original",
                 systemImage: editor.compare == .original ? "eye.slash" : "eye"

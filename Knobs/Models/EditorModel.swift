@@ -26,10 +26,11 @@ final class EditorModel {
     }
 
     /// What the canvas is for. Cropping previews the whole straightened photo under the crop overlay.
+    /// Each tool keeps its plugin's values from before it opened, for Cancel.
     enum Tool {
         case none
-        /// Keeps the crop's values from before the tool opened, for Cancel.
         case crop(restoring: [String: KnobValue])
+        case gradient(restoring: [String: KnobValue])
     }
 
     let engine: RenderEngine
@@ -160,6 +161,55 @@ final class EditorModel {
         document.reset(plugin: crop.id)
         set(values: saved, plugin: crop)
         matchResolution(now: true)
+    }
+
+    var hasOpenTool: Bool {
+        if case .none = tool { false } else { true }
+    }
+
+    // MARK: Graduated filter tool
+
+    var gradientPlugin: (any KnobPlugin)? {
+        engine.plugin(id: "graduated_filter")
+    }
+
+    var isEditingGradient: Bool {
+        if case .gradient = tool { true } else { false }
+    }
+
+    func toggleGradient() {
+        if isEditingGradient { commitTool() } else { beginGradient() }
+    }
+
+    func beginGradient() {
+        guard photo != nil, !isEditingGradient, let plugin = gradientPlugin else { return }
+        if isCropping { commitCrop() }
+        tool = .gradient(restoring: document.values(for: plugin.id))
+        if compare == .original { toggleCompare() }
+    }
+
+    /// Return and Done: keep what the open tool did.
+    func commitTool() {
+        switch tool {
+        case .none: break
+        case .crop: commitCrop()
+        case .gradient: tool = .none
+        }
+    }
+
+    /// Escape and Cancel: put the open tool's plugin back as it was.
+    func cancelTool() {
+        switch tool {
+        case .none:
+            break
+        case .crop:
+            cancelCrop()
+        case .gradient(let saved):
+            guard let plugin = gradientPlugin else { return }
+            tool = .none
+            document.reset(plugin: plugin.id)
+            set(values: saved, plugin: plugin)
+        }
     }
 
     func export(format: ExportFormat, to url: URL) async {

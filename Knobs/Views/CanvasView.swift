@@ -21,6 +21,17 @@ struct CanvasView: View {
                     )
                 }
             }
+            if editor.isEditingGradient, editor.compare == .edited, let image = editor.previewImage,
+               let gradient = editor.gradient {
+                GeometryReader { proxy in
+                    GradientOverlay(
+                        editor: editor,
+                        gradient: gradient,
+                        layout: MetalCanvas.layout(imageExtent: image.extent, viewSize: proxy.size, displayScale: displayScale),
+                        displayScale: displayScale
+                    )
+                }
+            }
             switch editor.state {
             case .empty:
                 ContentUnavailableView("No Photo", systemImage: "photo.on.rectangle", description: Text("Open a folder with ⌘O"))
