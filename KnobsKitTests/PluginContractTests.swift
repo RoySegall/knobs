@@ -83,6 +83,8 @@ struct PluginContractTests {
         @Test("should change the image when its params are pushed", arguments: PluginContractTests.ids)
         func pushed(id: String) throws {
             let plugin = try PluginContractTests.plugin(id)
+            // A look's other setting may be the identity (a profile's neutral); its own tests cover it.
+            guard !plugin.runsAtDefaults else { return }
             let stored = Dictionary(uniqueKeysWithValues: plugin.params.map { ($0.id, PluginContractTests.pushed($0)) })
             let values = KnobValues(params: plugin.params, stored: stored)
             // A knob that only acts on color fringes at hard edges rightly leaves the detail scene alone.

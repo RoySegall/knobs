@@ -114,18 +114,23 @@ public final class RenderEngine: Sendable {
         let edited = active.reduce(image) { image, entry in
             entry.plugin.apply(image: image, values: entry.values, context: context)
         }
-        return display(edited, source: context.source)
+        let rendered = active.contains { $0.plugin.rendersDisplay(values: $0.values, context: context) }
+        return display(edited, source: context.source, rendered: rendered)
     }
 
     /// Where a RAW's decoded highlights end, in linear units, with `Photo.rawHeadroom` applied.
     static let rawWhite: Float = 4
+    /// Where a RAW's highlight shoulder starts.
+    static let rawKnee: Float = 0.9
 
     /// Rolls highlights into display range. RAW keeps ~2 stops above white, so its shoulder starts
     /// below 1; a bitmap ends at 1 and passes through untouched unless an edit pushed it past white.
-    func display(_ image: CIImage, source: RenderContext.Source) -> CIImage {
-        let (knee, white): (Float, Float) = switch source {
-        case .raw: (0.9, Self.rawWhite)
-        case .bitmap: (0.9, 1)
+    /// `rendered` means a plugin already did this, so only the clearing outside the bounds is left.
+    func display(_ image: CIImage, source: RenderContext.Source, rendered: Bool = false) -> CIImage {
+        let (knee, white): (Float, Float) = switch (source, rendered) {
+        case (_, true): (.greatestFiniteMagnitude, 1)
+        case (.raw, false): (Self.rawKnee, Self.rawWhite)
+        case (.bitmap, false): (0.9, 1)
         }
         let bounds = CIVector(cgRect: image.extent)
         return KernelLibrary.color("display_rolloff").apply(extent: image.extent, arguments: [image, knee, white, bounds]) ?? image
