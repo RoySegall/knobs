@@ -1,0 +1,43 @@
+Knobs/Controls/CurveEditor.swift
+  s_7c21c36c2cbc9b::t_e4692efdb8cb7f 1,5-6,8-42,45-50,52-226,229-291
+KnobsKitTests/Plugins/ToneCurveTests.swift
+  s_7c21c36c2cbc9b::t_41274b90e10729 1-215
+  s_7c21c36c2cbc9b::t_302127ed9f02b5 216-227
+KnobsKit/Plugins/ToneCurve/ToneCurvePlugin.swift
+  s_7c21c36c2cbc9b::t_f506686575b95b 1-69
+  s_7c21c36c2cbc9b::t_822e75dee108cd 70-82
+KnobsKit/Plugins/ToneCurve/ToneCurveLUT.swift
+  s_7c21c36c2cbc9b::t_f83d86102e948e 1-50,54
+  s_7c21c36c2cbc9b::t_402ed5d6ebf62a 51-53,55-57
+KnobsKit/Plugins/ToneCurve/MonotoneCurve.swift
+  s_7c21c36c2cbc9b::t_01dd704365acc3 1-122
+  s_7c21c36c2cbc9b::t_70ff52c69a5173 123-170
+KnobsKit/Plugins/ToneCurve/ToneCurve.metal
+  s_7c21c36c2cbc9b::t_ae7b9c4133e509 1-23
+Knobs/Controls/ParamGroupControl.swift
+  s_7c21c36c2cbc9b::t_43e73b9597f31a 1-49
+Knobs/Controls/ParamControl.swift
+  s_7c21c36c2cbc9b::t_d1b7cddaf79b6b 41-42
+Knobs/Views/InspectorView.swift
+  s_7c21c36c2cbc9b::t_21e5076a2678ad 92-98,102-108
+KnobsKit/Engine/KnobParam.swift
+  s_7c21c36c2cbc9b::t_3d75ccc88e193a 49-52,54-61,66-67,126-133
+KnobsKit/Plugins/ToneCurve/ParametricCurve.swift
+  s_7c21c36c2cbc9b::t_44b085ab6b40c6 1-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "948328cf64d415cf524136600e9831e2ae17b2b3",
+  "prompts": {},
+  "sessions": {
+    "s_7c21c36c2cbc9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6cd0b42-41dd-4208-8c73-230afb58eb8a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Roy Segall <roy@segall.io>"
+    }
+  }
+}
