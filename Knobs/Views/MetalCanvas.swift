@@ -56,8 +56,13 @@ struct MetalCanvas: NSViewRepresentable {
         }
 
         func draw(in view: MTKView) {
+            let started = CACurrentMediaTime()
+            let changedAt = PerfProbe.lastChange
             guard let drawable = view.currentDrawable, let buffer = queue.makeCommandBuffer() else { return }
             let size = view.drawableSize
+            if PerfProbe.logURL != nil {
+                PerfProbe.canvas = "bounds \(view.bounds.size) drawable \(size) backing \(view.window?.backingScaleFactor ?? 0) layer \(view.layer?.contentsScale ?? 0)"
+            }
             let bounds = CGRect(origin: .zero, size: size)
             var frame = CIImage(color: MetalCanvas.background).cropped(to: bounds)
             if let image {
@@ -73,6 +78,17 @@ struct MetalCanvas: NSViewRepresentable {
             destination.colorSpace = engine.displayColorSpace
             _ = try? engine.context.startTask(toRender: frame, to: destination)
             buffer.present(drawable)
+            if PerfProbe.logURL != nil {
+                let cpu = (CACurrentMediaTime() - started) * 1000
+                buffer.addCompletedHandler { buffer in
+                    let frame = PerfProbe.Frame(
+                        cpu: cpu,
+                        gpu: (buffer.gpuEndTime - buffer.gpuStartTime) * 1000,
+                        latency: (buffer.gpuEndTime - changedAt) * 1000
+                    )
+                    DispatchQueue.main.async { PerfProbe.record(frame: frame) }
+                }
+            }
             buffer.commit()
         }
 

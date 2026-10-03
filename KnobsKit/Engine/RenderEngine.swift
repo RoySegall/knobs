@@ -37,13 +37,16 @@ public final class RenderEngine: Sendable {
     public let plugins: [any KnobPlugin]
     public let device: any MTLDevice
     public let context: CIContext
+    let queue: any MTLCommandQueue
+    let workingColorSpace = CGColorSpace(name: CGColorSpace.extendedLinearSRGB)!
     public let displayColorSpace = CGColorSpace(name: CGColorSpace.displayP3)!
 
     public init(plugins: [any KnobPlugin] = PluginRegistry.all) {
         self.plugins = plugins.sorted { ($0.stage, $0.order) < ($1.stage, $1.order) }
         device = MTLCreateSystemDefaultDevice()!
+        queue = device.makeCommandQueue()!
         context = CIContext(mtlDevice: device, options: [
-            .workingColorSpace: CGColorSpace(name: CGColorSpace.extendedLinearSRGB)!,
+            .workingColorSpace: workingColorSpace,
             .workingFormat: CIFormat.RGBAh,
         ])
     }
@@ -88,6 +91,28 @@ public final class RenderEngine: Sendable {
         active.reduce(image) { image, entry in
             entry.plugin.apply(image: image, values: entry.values, context: context)
         }
+    }
+
+    /// Renders an image into a GPU texture once, so later frames sample pixels instead of
+    /// re-running its graph (file decode, resampling) whenever Core Image's cache lets go.
+    func materialize(_ image: CIImage) -> CIImage {
+        let extent = image.extent.integral
+        let descriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .rgba16Float,
+            width: Int(extent.width),
+            height: Int(extent.height),
+            mipmapped: false
+        )
+        descriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
+        descriptor.storageMode = .private
+        guard let texture = device.makeTexture(descriptor: descriptor), let buffer = queue.makeCommandBuffer() else { return image }
+        let destination = CIRenderDestination(mtlTexture: texture, commandBuffer: buffer)
+        destination.colorSpace = workingColorSpace
+        let origin = image.transformed(by: CGAffineTransform(translationX: -extent.minX, y: -extent.minY))
+        guard (try? context.startTask(toRender: origin, to: destination)) != nil else { return image }
+        buffer.commit()
+        buffer.waitUntilCompleted()
+        return CIImage(mtlTexture: texture, options: [.colorSpace: workingColorSpace]) ?? image
     }
 
     func downscale(_ image: CIImage, scale: Double) -> CIImage {

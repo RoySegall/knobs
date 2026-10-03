@@ -60,9 +60,11 @@ final class EditorModel {
             let photo = try await Task.detached(priority: .userInitiated) { try Photo.load(url: url) }.value
             guard case .loading(let current) = state, current == url else { return }
             document = Self.loadDocument(for: url)
+            let session = await makeSession(photo: photo)
+            guard case .loading(let current) = state, current == url else { return }
             compare = .edited
             state = .ready(photo)
-            session = engine.previewSession(photo: photo, maxPixelSize: maxPixelSize(for: photo))
+            self.session = session
             refresh()
         } catch {
             state = .failed(url, message: error.localizedDescription)
@@ -89,6 +91,11 @@ final class EditorModel {
 
     func resetAll() {
         document.resetAll()
+        documentChanged()
+    }
+
+    func restore(document: EditDocument) {
+        self.document = document
         documentChanged()
     }
 
@@ -129,9 +136,20 @@ final class EditorModel {
         resizeTask = Task {
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled, let photo else { return }
-            session = engine.previewSession(photo: photo, maxPixelSize: maxPixelSize(for: photo))
+            let session = await makeSession(photo: photo)
+            guard !Task.isCancelled, self.photo?.url == photo.url else { return }
+            self.session = session
             refresh()
         }
+    }
+
+    /// Built off the main thread: the first decode and downscale of a big photo takes a while.
+    private func makeSession(photo: Photo) async -> PreviewSession {
+        let engine = engine
+        let size = maxPixelSize(for: photo)
+        return await Task.detached(priority: .userInitiated) {
+            engine.previewSession(photo: photo, maxPixelSize: size)
+        }.value
     }
 
     private func maxPixelSize(for photo: Photo) -> Int {

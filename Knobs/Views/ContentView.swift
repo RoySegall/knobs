@@ -22,6 +22,7 @@ struct ContentView: View {
         .task(id: library.selection) {
             if let url = library.selection {
                 await editor.open(url: url)
+                await PerfProbe.run(editor: editor)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
