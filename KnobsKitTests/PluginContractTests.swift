@@ -83,6 +83,8 @@ struct PluginContractTests {
         @Test("should change the image when its params are pushed", arguments: PluginContractTests.ids)
         func pushed(id: String) throws {
             let plugin = try PluginContractTests.plugin(id)
+            // Its default is already an edit, so its own tests check what pushing changes.
+            guard !plugin.runsAtDefaults else { return }
             let input = TestImages.detail()
             let stored = Dictionary(uniqueKeysWithValues: plugin.params.map { ($0.id, PluginContractTests.pushed($0)) })
             let values = KnobValues(params: plugin.params, stored: stored)
