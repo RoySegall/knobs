@@ -8,6 +8,7 @@ the photo, runs the plugins in stage order and renders. It knows nothing about e
 ```bash
 scripts/generate.sh                       # plugin registry + Xcode project (gitignored). Run after cloning.
 scripts/test.sh [derived-data-dir]        # unit tests
+scripts/install.sh                        # Release build → ~/Applications/Knobs.app, the one copy to run
 scripts/render.sh [--derived dir] in.heic out.jpg --size 1200 --side-by-side dehaze.amount=60
 ```
 
