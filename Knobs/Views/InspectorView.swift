@@ -8,7 +8,7 @@ struct InspectorView: View {
     private var panels: [(panel: Panel, plugins: [any KnobPlugin])] {
         let visible = editor.engine.plugins.filter { $0.params.contains { $0.presentation == .inspector } }
         return Dictionary(grouping: visible) { $0.panel }
-            .map { (panel: $0.key, plugins: $0.value.sorted { $0.order < $1.order }) }
+            .map { (panel: $0.key, plugins: $0.value.sorted { $0.panelOrder < $1.panelOrder }) }
             .sorted { $0.panel.order < $1.panel.order }
     }
 
@@ -89,14 +89,52 @@ struct PluginSection: View {
                     .onTapGesture(count: 2) { editor.reset(plugin: plugin) }
                     .help("Double-click to reset")
             }
-            ForEach(plugin.params.filter { $0.presentation == .inspector }) { param in
-                ParamControl(
-                    param: param,
-                    value: Binding(
-                        get: { editor.value(param: param, plugin: plugin) },
-                        set: { editor.set(value: $0, param: param, plugin: plugin) }
-                    )
-                )
+            ForEach(ParamRow.rows(plugin.params.filter { $0.presentation == .inspector })) { row in
+                switch row {
+                case .single(let param):
+                    control(param)
+                case .wheels(let params):
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 10) {
+                        ForEach(params) { control($0) }
+                    }
+                }
+            }
+        }
+    }
+
+    private func control(_ param: KnobParam) -> some View {
+        ParamControl(
+            param: param,
+            value: Binding(
+                get: { editor.value(param: param, plugin: plugin) },
+                set: { editor.set(value: $0, param: param, plugin: plugin) }
+            )
+        )
+    }
+}
+
+/// Consecutive wheels share a two-column grid, so a grading panel reads as a block of wheels, not a tall stack.
+enum ParamRow: Identifiable {
+    case single(KnobParam)
+    case wheels([KnobParam])
+
+    var id: String {
+        switch self {
+        case .single(let param): param.id
+        case .wheels(let params): params.map(\.id).joined(separator: "+")
+        }
+    }
+
+    static func rows(_ params: [KnobParam]) -> [ParamRow] {
+        params.reduce(into: []) { rows, param in
+            guard case .wheel = param.kind else {
+                rows.append(.single(param))
+                return
+            }
+            if case .wheels(let wheels) = rows.last {
+                rows[rows.count - 1] = .wheels(wheels + [param])
+            } else {
+                rows.append(.wheels([param]))
             }
         }
     }
