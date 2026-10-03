@@ -6,7 +6,13 @@ namespace coreimage {
 // Maps scene values into display range without per-channel clipping. Above the knee a rational
 // shoulder bends the brightest and darkest channel (keeping the middle one between them, so hue
 // holds) and lands `white` on 1. At white 1 it is the identity below 1.
-float4 display_rolloff(sample_t s, float knee, float white) {
+// Pixels outside `bounds` come back clear: Core Image may evaluate an upstream neighbour-sampling
+// kernel past its extent once the result is moved, which smears edge pixels around the photo.
+float4 display_rolloff(sample_t s, float knee, float white, float4 bounds, destination dest) {
+    float2 p = dest.coord();
+    if (p.x < bounds.x || p.y < bounds.y || p.x > bounds.x + bounds.z || p.y > bounds.y + bounds.w) {
+        return float4(0.0);
+    }
     float high = metal::max(s.r, metal::max(s.g, s.b));
     if (high <= knee) return s;
     float low = metal::min(s.r, metal::min(s.g, s.b));

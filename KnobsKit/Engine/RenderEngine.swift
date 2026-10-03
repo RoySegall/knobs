@@ -104,7 +104,8 @@ public final class RenderEngine: Sendable {
         case .raw: (0.9, Self.rawWhite)
         case .bitmap: (0.9, 1)
         }
-        return KernelLibrary.color("display_rolloff").apply(extent: image.extent, arguments: [image, knee, white]) ?? image
+        let bounds = CIVector(cgRect: image.extent)
+        return KernelLibrary.color("display_rolloff").apply(extent: image.extent, arguments: [image, knee, white, bounds]) ?? image
     }
 
     /// Renders an image into a GPU texture once, so later frames sample pixels instead of
