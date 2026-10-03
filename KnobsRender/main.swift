@@ -5,7 +5,7 @@ import Metal
 
 // Renders a photo through the plugin pipeline, for checking a knob's look without the app.
 let usage = """
-usage: knobs-render <input> <output.jpg|heic|tif|png> [--size N] [--side-by-side] [--sidecar file.knobs] [plugin.param=value ...]
+usage: knobs-render <input> <output.jpg|heic|tif|png> [--size N] [--side-by-side] [--auto] [--sidecar file.knobs] [plugin.param=value ...]
        knobs-render --list
 values: slider 0.5 · flag true · choice id · curve "0,0;0.5,0.6;1,1" · wheel "hue,amount"
 """
@@ -97,6 +97,7 @@ let input = URL(fileURLWithPath: arguments.removeFirst())
 let output = URL(fileURLWithPath: arguments.removeFirst())
 var size: Int?
 var sideBySide = false
+var auto = false
 var document = EditDocument()
 
 while !arguments.isEmpty {
@@ -108,6 +109,8 @@ while !arguments.isEmpty {
         arguments.removeFirst()
     case "--side-by-side":
         sideBySide = true
+    case "--auto":
+        auto = true
     case "--sidecar":
         guard let path = arguments.first else { fail("--sidecar needs a path") }
         arguments.removeFirst()
@@ -133,6 +136,28 @@ do {
     photo = try Photo.load(url: input)
 } catch {
     fail("Can't read \(input.path): \(error)")
+}
+
+// --auto runs Auto Tone on top of the other values and prints what it picked.
+if auto {
+    let start = Date()
+    let values = engine.autoTone(photo: photo, document: document)
+    let elapsed = Date().timeIntervalSince(start) * 1000
+    for (pluginID, params) in values {
+        guard let plugin = engine.plugin(id: pluginID) else { continue }
+        for (paramID, value) in params {
+            if let param = plugin.param(paramID) {
+                document.set(value: value, param: param, plugin: pluginID)
+            }
+        }
+    }
+    let picked = values.sorted { $0.key < $1.key }.flatMap { plugin in
+        plugin.value.sorted { $0.key < $1.key }.map { param -> String in
+            guard case .number(let number) = param.value else { return "" }
+            return "\(plugin.key).\(param.key)=\(number)"
+        }
+    }
+    print(String(format: "auto %.0f ms: ", elapsed) + picked.joined(separator: " "))
 }
 
 let request = RenderRequest(maxPixelSize: size)

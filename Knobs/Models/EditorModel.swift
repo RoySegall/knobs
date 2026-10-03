@@ -45,6 +45,7 @@ final class EditorModel {
     private var viewport = CGSize(width: 2048, height: 2048)
     private var resizeTask: Task<Void, Never>?
     private var saveTask: Task<Void, Never>?
+    private var autoToneTask: Task<Void, Never>?
 
     init(engine: RenderEngine) {
         self.engine = engine
@@ -133,6 +134,35 @@ final class EditorModel {
                     document.set(value: value, param: param, plugin: plugin.id)
                 }
             }
+        }
+    }
+
+    /// Several plugins' values as one undo step, plugin id → param id → value. Params not named keep theirs.
+    func set(values: [String: [String: KnobValue]], key: String) {
+        edit(key: key) { document in
+            for (pluginID, params) in values {
+                guard let plugin = engine.plugin(id: pluginID) else { continue }
+                for param in plugin.params {
+                    if let value = params[param.id] {
+                        document.set(value: value, param: param, plugin: pluginID)
+                    }
+                }
+            }
+        }
+    }
+
+    /// Measures the photo off the main thread, then sets Auto's values as one undo step.
+    func autoTone() {
+        guard let photo else { return }
+        autoToneTask?.cancel()
+        let engine = engine
+        let document = document
+        autoToneTask = Task {
+            let values = await Task.detached(priority: .userInitiated) {
+                engine.autoTone(photo: photo, document: document)
+            }.value
+            guard !Task.isCancelled, self.photo?.url == photo.url else { return }
+            set(values: values, key: "auto")
         }
     }
 
