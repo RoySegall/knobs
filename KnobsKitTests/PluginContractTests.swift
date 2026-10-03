@@ -83,13 +83,31 @@ struct PluginContractTests {
         @Test("should change the image when its params are pushed", arguments: PluginContractTests.ids)
         func pushed(id: String) throws {
             let plugin = try PluginContractTests.plugin(id)
-            let input = TestImages.detail()
             let stored = Dictionary(uniqueKeysWithValues: plugin.params.map { ($0.id, PluginContractTests.pushed($0)) })
             let values = KnobValues(params: plugin.params, stored: stored)
-            let output = plugin.apply(image: input, values: values, context: TestImages.context(for: input))
-            if output.extent == input.extent {
-                #expect(Pixels.maxDifference(between: output, and: input) > 1e-2)
+            // A knob that only acts on color fringes at hard edges rightly leaves the detail scene alone.
+            let changes = [TestImages.detail(), PluginContractTests.fringedEdge()].compactMap { input -> Float? in
+                let output = plugin.apply(image: input, values: values, context: TestImages.context(for: input))
+                return output.extent == input.extent ? Pixels.maxDifference(between: output, and: input) : nil
+            }
+            if let change = changes.max() {
+                #expect(change > 1e-2)
             }
         }
+    }
+
+    /// Dark left, bright right, with a purple band (top half) or a green band (bottom half) on the dark side of the edge.
+    static func fringedEdge() -> CIImage {
+        let width = TestImages.width
+        let height = TestImages.height
+        var floats: [Float] = []
+        for y in 0..<height {
+            for x in 0..<width {
+                let fringe: [Float] = y < height / 2 ? [0.16, 0.04, 0.24] : [0.06, 0.2, 0.05]
+                let distance = width / 2 - x
+                floats += (distance <= 0 ? [0.85, 0.84, 0.82] : distance <= 4 ? fringe : [0.03, 0.03, 0.03]) + [1]
+            }
+        }
+        return TestImages.image(floats: floats, width: width, height: height)
     }
 }
