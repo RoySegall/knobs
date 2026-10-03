@@ -150,3 +150,35 @@ struct EngineTests {
         }
     }
 }
+
+@Suite("Display")
+struct DisplayTests {
+    @Suite("RenderEngine.display")
+    struct Rolloff {
+        let engine = RenderEngine(plugins: [])
+
+        @Test("should land a RAW's headroom on white without clipping a channel")
+        func rawHeadroom() {
+            let input = TestImages.image(floats: [RenderEngine.rawWhite, RenderEngine.rawWhite * 0.5, 0.2, 1], width: 1, height: 1)
+            let output = Pixels.read(engine.display(input, source: .raw))
+            #expect(abs(output[0] - 1) < 1e-3)
+            #expect(output[1] < output[0] && output[1] > output[2])
+        }
+
+        @Test("should leave a bitmap within white untouched")
+        func bitmapIdentity() {
+            let input = TestImages.withinWhite()
+            #expect(Pixels.maxDifference(between: engine.display(input, source: .bitmap), and: input) < 1e-4)
+        }
+
+        @Test("should keep RAW values ordered and inside display range")
+        func monotone() {
+            let levels: [Float] = [0.5, 0.9, 1, 1.5, 2, 3, 4, 6]
+            let outputs = levels.map { level in
+                Pixels.read(engine.display(TestImages.gray(level: level, size: 1), source: .raw))[0]
+            }
+            #expect(zip(outputs, outputs.dropFirst()).allSatisfy { $0 < $1 + 1e-6 })
+            #expect(outputs.allSatisfy { $0 <= 1 + 1e-4 })
+        }
+    }
+}

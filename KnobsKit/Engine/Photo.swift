@@ -51,8 +51,15 @@ public struct Photo: Sendable {
         }
     }
 
+    /// Extended range keeps highlights above white instead of clipping them in the decoder, so the
+    /// Highlights knob can bring them back. Midtones are unchanged.
+    static let rawHeadroom: Float = 1
+
     func makeRAWFilter() -> CIRAWFilter? {
-        guard case .raw(let data, let typeIdentifier) = source else { return nil }
-        return CIRAWFilter(imageData: data, identifierHint: typeIdentifier)
+        guard case .raw(let data, let typeIdentifier) = source,
+              let filter = CIRAWFilter(imageData: data, identifierHint: typeIdentifier)
+        else { return nil }
+        filter.extendedDynamicRangeAmount = Self.rawHeadroom
+        return filter
     }
 }

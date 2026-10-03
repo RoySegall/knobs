@@ -88,9 +88,23 @@ public final class RenderEngine: Sendable {
     }
 
     func process(image: CIImage, plugins active: [ActivePlugin], context: RenderContext) -> CIImage {
-        active.reduce(image) { image, entry in
+        let edited = active.reduce(image) { image, entry in
             entry.plugin.apply(image: image, values: entry.values, context: context)
         }
+        return display(edited, source: context.source)
+    }
+
+    /// Where a RAW's decoded highlights end, in linear units, with `Photo.rawHeadroom` applied.
+    static let rawWhite: Float = 4
+
+    /// Rolls highlights into display range. RAW keeps ~2 stops above white, so its shoulder starts
+    /// below 1; a bitmap ends at 1 and passes through untouched unless an edit pushed it past white.
+    func display(_ image: CIImage, source: RenderContext.Source) -> CIImage {
+        let (knee, white): (Float, Float) = switch source {
+        case .raw: (0.9, Self.rawWhite)
+        case .bitmap: (0.9, 1)
+        }
+        return KernelLibrary.color("display_rolloff").apply(extent: image.extent, arguments: [image, knee, white]) ?? image
     }
 
     /// Renders an image into a GPU texture once, so later frames sample pixels instead of

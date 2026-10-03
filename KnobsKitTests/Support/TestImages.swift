@@ -23,6 +23,15 @@ enum TestImages {
         return image(floats: floats, width: width, height: height)
     }
 
+    /// `detail()` scaled under 1.0, the range of a JPEG or HEIC.
+    static func withinWhite() -> CIImage {
+        detail().applyingFilter("CIColorMatrix", parameters: [
+            "inputRVector": CIVector(x: 0.8, y: 0, z: 0, w: 0),
+            "inputGVector": CIVector(x: 0, y: 0.8, z: 0, w: 0),
+            "inputBVector": CIVector(x: 0, y: 0, z: 0.8, w: 0),
+        ])
+    }
+
     static func gray(level: Float, size: Int = 16) -> CIImage {
         var floats = [Float](repeating: level, count: size * size * 4)
         for index in stride(from: 3, to: floats.count, by: 4) {
