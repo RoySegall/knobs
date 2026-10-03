@@ -1,0 +1,41 @@
+KnobsKitTests/Plugins/NoiseReductionTests.swift
+  s_7c21c36c2cbc9b::t_158330b4734bfd 1-179
+KnobsKit/Plugins/Grain/Grain.metal
+  s_7c21c36c2cbc9b::t_1291c4036ca45a 1-75
+KnobsKit/Plugins/Grain/GrainPlugin.swift
+  s_7c21c36c2cbc9b::t_5e92e477f4edb9 1-45
+KnobsKit/Plugins/NoiseReduction/NoiseReduction.metal
+  s_7c21c36c2cbc9b::t_139b315aa20004 1-154
+KnobsKit/Plugins/NoiseReduction/NoiseReductionPlugin.swift
+  s_7c21c36c2cbc9b::t_579714a45f4054 1-116
+KnobsKit/Plugins/Sharpening/Sharpening.metal
+  s_7c21c36c2cbc9b::t_431abd8853e51a 1-86
+KnobsKit/Plugins/Sharpening/SharpeningPlugin.swift
+  s_7c21c36c2cbc9b::t_fcb00c9ebbc037 1-67
+KnobsKit/Plugins/Vignette/Vignette.metal
+  s_7c21c36c2cbc9b::t_15054570dffdef 1-27
+KnobsKit/Plugins/Vignette/VignettePlugin.swift
+  s_7c21c36c2cbc9b::t_5f0b6f8bfe0198 1-50
+KnobsKitTests/Plugins/GrainTests.swift
+  s_7c21c36c2cbc9b::t_2906ba8cb18f0e 1-118
+KnobsKitTests/Plugins/SharpeningTests.swift
+  s_7c21c36c2cbc9b::t_a276d8d7a1b83a 1-205
+KnobsKitTests/Plugins/VignetteTests.swift
+  s_7c21c36c2cbc9b::t_f6ccbeb60fa906 1-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c156d21370ecc8d39e4c8ed44e5e6549ad24b7dc",
+  "prompts": {},
+  "sessions": {
+    "s_7c21c36c2cbc9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6cd0b42-41dd-4208-8c73-230afb58eb8a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Roy Segall <roy@segall.io>"
+    }
+  }
+}
