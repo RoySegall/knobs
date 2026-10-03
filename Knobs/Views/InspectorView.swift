@@ -1,9 +1,17 @@
 import KnobsKit
 import SwiftUI
 
+/// A button the app attaches to a panel's header by panel id, such as Auto on Light.
+struct PanelAction {
+    let title: String
+    let help: String
+    let perform: () -> Void
+}
+
 /// Draws every plugin's params, grouped by panel. Nothing here knows about any specific knob.
 struct InspectorView: View {
     let editor: EditorModel
+    var panelActions: [String: PanelAction] = [:]
 
     private var panels: [(panel: Panel, plugins: [any KnobPlugin])] {
         let visible = editor.engine.plugins.filter { $0.params.contains { $0.presentation == .inspector } }
@@ -23,6 +31,7 @@ struct InspectorView: View {
                         panel: group.panel,
                         plugins: group.plugins,
                         values: Dictionary(uniqueKeysWithValues: group.plugins.map { ($0.id, document.values(for: $0.id)) }),
+                        action: panelActions[group.panel.id],
                         editor: editor
                     )
                     .equatable()
@@ -40,13 +49,15 @@ struct PanelSection: View, Equatable {
     let plugins: [any KnobPlugin]
     /// Each plugin's stored values, by plugin id.
     let values: [String: [String: KnobValue]]
+    let action: PanelAction?
     let editor: EditorModel
     @AppStorage private var expanded: Bool
 
-    init(panel: Panel, plugins: [any KnobPlugin], values: [String: [String: KnobValue]], editor: EditorModel) {
+    init(panel: Panel, plugins: [any KnobPlugin], values: [String: [String: KnobValue]], action: PanelAction?, editor: EditorModel) {
         self.panel = panel
         self.plugins = plugins
         self.values = values
+        self.action = action
         self.editor = editor
         _expanded = AppStorage(wrappedValue: true, "panel.\(panel.id).expanded")
     }
@@ -60,12 +71,15 @@ struct PanelSection: View, Equatable {
                             .font(.system(size: 11, weight: .semibold))
                             .tracking(0.8)
                         Spacer()
-                        Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 9, weight: .semibold))
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                if let action {
+                    Button(action.title, action: action.perform)
+                        .controlSize(.mini)
+                        .help(action.help)
+                }
                 if values.values.contains(where: { !$0.isEmpty }) {
                     Button("Reset \(panel.title)", systemImage: "arrow.counterclockwise") {
                         plugins.forEach(editor.reset)
@@ -75,6 +89,12 @@ struct PanelSection: View, Equatable {
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
                 }
+                Button { expanded.toggle() } label: {
+                    Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
             if expanded {
                 ForEach(plugins, id: \.id) { plugin in
@@ -129,6 +149,6 @@ struct PluginSection: View {
 
 extension PanelSection {
     nonisolated static func == (lhs: PanelSection, rhs: PanelSection) -> Bool {
-        lhs.panel == rhs.panel && lhs.values == rhs.values
+        lhs.panel == rhs.panel && lhs.values == rhs.values && lhs.action?.title == rhs.action?.title
     }
 }

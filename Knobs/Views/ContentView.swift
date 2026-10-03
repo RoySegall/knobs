@@ -12,7 +12,9 @@ struct ContentView: View {
             HStack(spacing: 0) {
                 CanvasView(editor: editor)
                 Divider()
-                InspectorView(editor: editor)
+                InspectorView(editor: editor, panelActions: [
+                    Panel.light.id: PanelAction(title: "Auto", help: "Auto Tone (⌘U)") { editor.autoTone() },
+                ])
             }
             Divider()
             FilmstripView(library: library, editor: editor, exporter: exporter)
@@ -51,6 +53,9 @@ struct ContentView: View {
         }
         ToolbarItemGroup(placement: .primaryAction) {
             exportStatus
+            Button("Auto Tone", systemImage: "wand.and.stars") { editor.autoTone() }
+                .help("Auto Tone (⌘U)")
+                .disabled(editor.photo == nil)
             Toggle(
                 "Crop & Straighten",
                 systemImage: "crop.rotate",

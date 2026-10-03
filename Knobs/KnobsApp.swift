@@ -53,6 +53,9 @@ struct KnobsCommands: Commands {
             Divider()
             Button(editor.compare == .original ? "Show Edited" : "Show Original") { editor.toggleCompare() }
                 .keyboardShortcut("\\", modifiers: [])
+            Button("Auto Tone") { editor.autoTone() }
+                .keyboardShortcut("u")
+                .disabled(editor.photo == nil)
             Button("Reset All Edits") { editor.resetAll() }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
             Divider()
