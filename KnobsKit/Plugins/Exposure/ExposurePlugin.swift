@@ -1,6 +1,7 @@
 import CoreImage
 
-/// Exposure in stops. On RAW it moves the decoder's exposure so highlights recover from sensor data.
+/// Exposure in stops. On RAW it moves the decoder's exposure so highlights recover from sensor data;
+/// on bitmaps a push rolls the top into white instead of clipping each channel.
 public struct ExposurePlugin: KnobPlugin {
     public let id = "exposure"
     public let title = "Exposure"
