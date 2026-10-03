@@ -89,15 +89,21 @@ struct PluginSection: View {
                     .onTapGesture(count: 2) { editor.reset(plugin: plugin) }
                     .help("Double-click to reset")
             }
-            ForEach(plugin.params.filter { $0.presentation == .inspector }) { param in
-                ParamControl(
-                    param: param,
-                    value: Binding(
-                        get: { editor.value(param: param, plugin: plugin) },
-                        set: { editor.set(value: $0, param: param, plugin: plugin) }
-                    )
-                )
+            ForEach(ParamRow.rows(for: plugin.params.filter { $0.presentation == .inspector })) { row in
+                switch row {
+                case .single(let param):
+                    ParamControl(param: param, value: binding(param))
+                case .group(_, let params):
+                    ParamGroupControl(params: params, value: binding)
+                }
             }
         }
+    }
+
+    private func binding(_ param: KnobParam) -> Binding<KnobValue> {
+        Binding(
+            get: { editor.value(param: param, plugin: plugin) },
+            set: { editor.set(value: $0, param: param, plugin: plugin) }
+        )
     }
 }

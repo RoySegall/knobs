@@ -46,12 +46,25 @@ public struct KnobParam: Sendable, Identifiable {
     public let title: String
     public let kind: Kind
     public let presentation: Presentation
+    /// Params of one plugin sharing a group draw as one control, e.g. RGB and per-channel curves in one editor.
+    public let group: String?
+    /// Accent for the param's control, e.g. a red channel's curve.
+    public let tint: KnobColor?
 
-    public init(id: String, title: String, kind: Kind, presentation: Presentation = .inspector) {
+    public init(
+        id: String,
+        title: String,
+        kind: Kind,
+        presentation: Presentation = .inspector,
+        group: String? = nil,
+        tint: KnobColor? = nil
+    ) {
         self.id = id
         self.title = title
         self.kind = kind
         self.presentation = presentation
+        self.group = group
+        self.tint = tint
     }
 
     public var defaultValue: KnobValue {
@@ -110,8 +123,14 @@ extension KnobParam {
         KnobParam(id: id, title: title, kind: .choice(options: options, default: defaultValue))
     }
 
-    public static func curve(id: String, title: String, default points: [CurvePoint] = CurvePoint.identity) -> KnobParam {
-        KnobParam(id: id, title: title, kind: .curve(default: points))
+    public static func curve(
+        id: String,
+        title: String,
+        default points: [CurvePoint] = CurvePoint.identity,
+        group: String? = nil,
+        tint: KnobColor? = nil
+    ) -> KnobParam {
+        KnobParam(id: id, title: title, kind: .curve(default: points), group: group, tint: tint)
     }
 
     public static func wheel(id: String, title: String, default wheel: Wheel = Wheel(hue: 0, amount: 0)) -> KnobParam {

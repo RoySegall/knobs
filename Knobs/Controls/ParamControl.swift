@@ -38,14 +38,8 @@ struct ParamControl: View {
                 ForEach(options) { Text($0.title).tag($0.id) }
             }
             .font(.system(size: 11))
-        case .curve(let defaultPoints):
-            CurveEditor(
-                param: param,
-                points: Binding(
-                    get: { if case .curve(let points) = value { points } else { defaultPoints } },
-                    set: { value = .curve($0) }
-                )
-            )
+        case .curve:
+            CurveEditor(channels: [CurveEditor.Channel(param: param, value: $value)])
         case .wheel(let defaultWheel):
             WheelControl(
                 param: param,
