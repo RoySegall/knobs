@@ -42,6 +42,10 @@ enum PerfProbe {
     static func run(editor: EditorModel) async {
         guard let logURL, let plugin = editor.engine.plugin(id: "exposure"), let param = plugin.param("exposure") else { return }
         let original = editor.document
+        if mode == "undo" {
+            await checkUndo(editor: editor, plugin: plugin, param: param, logURL: logURL)
+            return
+        }
         if mode == "gradient", let gradient = editor.gradientPlugin {
             editor.set(values: ["exposure": .number(-1), "dehaze": .number(30), "clarity": .number(20)], plugin: gradient)
         }
@@ -89,6 +93,23 @@ enum PerfProbe {
         draw gpu  \(stats(frames.map(\.gpu)))
         latency   \(stats(frames.map(\.latency)))  (edit → GPU done)
         """
+        try? report.write(to: logURL, atomically: true, encoding: .utf8)
+    }
+
+    /// Drags exposure, then undoes and redoes, and logs what the document held at each point.
+    private static func checkUndo(editor: EditorModel, plugin: any KnobPlugin, param: KnobParam, logURL: URL) async {
+        let original = editor.document
+        for step in 1...20 {
+            editor.set(value: .number(Double(step) / 10), param: param, plugin: plugin)
+            try? await Task.sleep(for: .milliseconds(16))
+        }
+        let dragged = editor.document.values(for: plugin.id)
+        editor.undo()
+        let undone = editor.document == original
+        editor.redo()
+        let redone = editor.document.values(for: plugin.id) == dragged
+        editor.undo()
+        let report = "drag \(dragged) · one undo restores original: \(undone) · redo brings drag back: \(redone) · canUndo after: \(editor.canUndo)"
         try? report.write(to: logURL, atomically: true, encoding: .utf8)
     }
 }

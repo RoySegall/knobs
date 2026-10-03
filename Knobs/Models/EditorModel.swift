@@ -47,6 +47,8 @@ final class EditorModel {
         didSet { refresh() }
     }
 
+    /// Per photo, kept while the app runs, so moving to the next photo and back keeps its undo steps.
+    private var histories: [URL: EditHistory] = [:]
     private var session: PreviewSession?
     private var viewport = CGSize(width: 2048, height: 2048)
     private var resizeTask: Task<Void, Never>?
@@ -91,32 +93,75 @@ final class EditorModel {
     }
 
     func set(value: KnobValue, param: KnobParam, plugin: any KnobPlugin) {
-        document.set(value: value, param: param, plugin: plugin.id)
-        documentChanged()
+        edit(key: "\(plugin.id).\(param.id)") { $0.set(value: value, param: param, plugin: plugin.id) }
     }
 
     /// Several of one plugin's values with a single refresh, e.g. a crop rect's four edges.
     func set(values: [String: KnobValue], plugin: any KnobPlugin) {
-        for param in plugin.params {
-            if let value = values[param.id] {
-                document.set(value: value, param: param, plugin: plugin.id)
+        edit(key: "\(plugin.id).*") { document in
+            for param in plugin.params {
+                if let value = values[param.id] {
+                    document.set(value: value, param: param, plugin: plugin.id)
+                }
             }
         }
-        documentChanged()
+    }
+
+    /// Puts a plugin's values back to exactly `values`, as one undo step.
+    func replace(values: [String: KnobValue], plugin: any KnobPlugin) {
+        edit(key: "replace.\(plugin.id)") { document in
+            document.reset(plugin: plugin.id)
+            for param in plugin.params {
+                if let value = values[param.id] {
+                    document.set(value: value, param: param, plugin: plugin.id)
+                }
+            }
+        }
     }
 
     func reset(plugin: any KnobPlugin) {
-        document.reset(plugin: plugin.id)
-        documentChanged()
+        edit(key: "reset.\(plugin.id)") { $0.reset(plugin: plugin.id) }
     }
 
     func resetAll() {
-        document.resetAll()
-        documentChanged()
+        edit(key: "reset") { $0.resetAll() }
     }
 
     func restore(document: EditDocument) {
         self.document = document
+        documentChanged()
+    }
+
+    // MARK: Undo
+
+    var canUndo: Bool {
+        photo.flatMap { histories[$0.url] }?.canUndo ?? false
+    }
+
+    var canRedo: Bool {
+        photo.flatMap { histories[$0.url] }?.canRedo ?? false
+    }
+
+    func undo() {
+        guard let url = photo?.url, let previous = histories[url]?.undo(current: document) else { return }
+        document = previous
+        documentChanged()
+    }
+
+    func redo() {
+        guard let url = photo?.url, let next = histories[url]?.redo(current: document) else { return }
+        document = next
+        documentChanged()
+    }
+
+    /// Every edit goes through here so it lands in the photo's undo history.
+    private func edit(key: String, _ change: (inout EditDocument) -> Void) {
+        let before = document
+        change(&document)
+        guard document != before else { return }
+        if let url = photo?.url {
+            histories[url, default: EditHistory()].record(before: before, key: key, time: .now)
+        }
         documentChanged()
     }
 
@@ -158,8 +203,7 @@ final class EditorModel {
     func cancelCrop() {
         guard case .crop(let saved) = tool, let crop = cropPlugin else { return }
         tool = .none
-        document.reset(plugin: crop.id)
-        set(values: saved, plugin: crop)
+        replace(values: saved, plugin: crop)
         matchResolution(now: true)
     }
 
@@ -211,8 +255,7 @@ final class EditorModel {
         case .gradient(let saved):
             guard let plugin = gradientPlugin else { return }
             tool = .none
-            document.reset(plugin: plugin.id)
-            set(values: saved, plugin: plugin)
+            replace(values: saved, plugin: plugin)
         }
     }
 

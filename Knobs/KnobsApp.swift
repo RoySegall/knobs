@@ -21,6 +21,14 @@ struct KnobsCommands: Commands {
     let editor: EditorModel
 
     var body: some Commands {
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo") { editor.undo() }
+                .keyboardShortcut("z")
+                .disabled(!editor.canUndo)
+            Button("Redo") { editor.redo() }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .disabled(!editor.canRedo)
+        }
         CommandGroup(replacing: .newItem) {
             Button("Open Folder…") { library.chooseFolder() }
                 .keyboardShortcut("o")
