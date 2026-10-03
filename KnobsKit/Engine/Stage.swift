@@ -42,6 +42,12 @@ public struct Panel: Sendable, Hashable, Identifiable {
     public static let geometry = Panel(id: "geometry", title: "Crop & Straighten", order: 90)
 }
 
+/// What geometry plugins frame. The crop tool asks for the whole straightened photo so it can draw the crop over it.
+public enum Framing: Sendable {
+    case cropped
+    case uncropped
+}
+
 public struct RenderContext: Sendable {
     public enum Source: Sendable {
         case raw
@@ -53,10 +59,12 @@ public struct RenderContext: Sendable {
     /// Full-resolution size of the oriented photo.
     public let fullSize: CGSize
     public let source: Source
+    public let framing: Framing
 
-    public init(scale: Double, fullSize: CGSize, source: Source) {
+    public init(scale: Double, fullSize: CGSize, source: Source, framing: Framing = .cropped) {
         self.scale = scale
         self.fullSize = fullSize
         self.source = source
+        self.framing = framing
     }
 }

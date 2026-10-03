@@ -40,6 +40,13 @@ struct ContentView: View {
             if case .exporting = editor.exportPhase {
                 ProgressView().controlSize(.small)
             }
+            Toggle(
+                "Crop & Straighten",
+                systemImage: "crop.rotate",
+                isOn: Binding(get: { editor.isCropping }, set: { _ in editor.toggleCrop() })
+            )
+            .help("Crop & Straighten (R)")
+            .disabled(editor.photo == nil)
             Button(
                 editor.compare == .original ? "Show Edited" : "Show Original",
                 systemImage: editor.compare == .original ? "eye.slash" : "eye"

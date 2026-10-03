@@ -32,6 +32,8 @@ Parallel checkouts pass their own derived-data dir.
 - Kernel names are global across the metallib: prefix them with the plugin id (`dehaze_transmission`).
 - Load kernels with `KernelLibrary.color/general/warp(name)`; they are cached.
 - RAW-capable knobs set the decoder in `configure(raw:)` and return true; `apply` covers JPEG/HEIC.
+  A decoder property not yet in `RAWBaseline` must be added there, or the live preview keeps stale values.
+- Geometry plugins honour `context.framing`: `.uncropped` is the crop tool showing the whole frame.
 
 ## Code style
 

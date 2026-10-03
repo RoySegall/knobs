@@ -14,6 +14,16 @@ struct MetalCanvas: NSViewRepresentable {
     static let padding: CGFloat = 20
     static let background = CIColor(red: 0.09, green: 0.09, blue: 0.09)
 
+    /// Where the canvas draws an image of `imageExtent` in a view of `viewSize` points. Overlays map through
+    /// this so they land on the same pixels the drawable shows.
+    static func layout(imageExtent: CGRect, viewSize: CGSize, displayScale: CGFloat) -> CanvasLayout {
+        CanvasLayout.fit(
+            imageSize: imageExtent.size,
+            drawableSize: CGSize(width: viewSize.width * displayScale, height: viewSize.height * displayScale),
+            padding: padding * displayScale
+        )
+    }
+
     func makeCoordinator() -> Coordinator {
         Coordinator(engine: engine)
     }
@@ -66,8 +76,12 @@ struct MetalCanvas: NSViewRepresentable {
             let bounds = CGRect(origin: .zero, size: size)
             var frame = CIImage(color: MetalCanvas.background).cropped(to: bounds)
             if let image {
-                frame = fit(image: image, in: size, padding: MetalCanvas.padding * (view.window?.backingScaleFactor ?? 2))
-                    .composited(over: frame)
+                let layout = CanvasLayout.fit(
+                    imageSize: image.extent.size,
+                    drawableSize: size,
+                    padding: MetalCanvas.padding * (view.window?.backingScaleFactor ?? 2)
+                )
+                frame = place(image: image, layout: layout).composited(over: frame)
             }
             let destination = CIRenderDestination(
                 width: Int(size.width),
@@ -92,21 +106,18 @@ struct MetalCanvas: NSViewRepresentable {
             buffer.commit()
         }
 
-        /// Centers the image on whole pixels. The session renders it at viewport size, so this is
-        /// usually a pure translate; a resize in progress gets a Lanczos scale until the session catches up.
-        private func fit(image: CIImage, in size: CGSize, padding: CGFloat) -> CIImage {
+        /// The session renders at viewport size, so this is usually a pure translate; a resize in progress
+        /// gets a Lanczos scale until the session catches up.
+        private func place(image: CIImage, layout: CanvasLayout) -> CIImage {
             let extent = image.extent
             guard extent.width > 0, extent.height > 0 else { return image }
-            let scale = min((size.width - padding * 2) / extent.width, (size.height - padding * 2) / extent.height)
-            var fitted = image.transformed(by: CGAffineTransform(translationX: -extent.minX, y: -extent.minY))
-            if abs(scale - 1) > 0.01 {
-                fitted = scale < 1
-                    ? fitted.applyingFilter("CILanczosScaleTransform", parameters: [kCIInputScaleKey: scale, kCIInputAspectRatioKey: 1])
-                    : fitted.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+            var placed = image.transformed(by: CGAffineTransform(translationX: -extent.minX, y: -extent.minY))
+            if layout.scale < 1 {
+                placed = placed.applyingFilter("CILanczosScaleTransform", parameters: [kCIInputScaleKey: layout.scale, kCIInputAspectRatioKey: 1])
+            } else if layout.scale > 1 {
+                placed = placed.transformed(by: CGAffineTransform(scaleX: layout.scale, y: layout.scale))
             }
-            let x = ((size.width - fitted.extent.width) / 2).rounded()
-            let y = ((size.height - fitted.extent.height) / 2).rounded()
-            return fitted.transformed(by: CGAffineTransform(translationX: x - fitted.extent.minX, y: y - fitted.extent.minY))
+            return placed.transformed(by: CGAffineTransform(translationX: layout.frame.minX, y: layout.frame.minY))
         }
     }
 }

@@ -2,11 +2,24 @@ import SwiftUI
 
 struct CanvasView: View {
     let editor: EditorModel
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         ZStack {
             MetalCanvas(image: editor.previewImage, engine: editor.engine) { viewport in
                 editor.updateViewport(pixels: viewport)
+            }
+            if editor.isCropping, editor.compare == .edited, let image = editor.previewImage, let photo = editor.photo,
+               let settings = editor.cropSettings {
+                GeometryReader { proxy in
+                    CropOverlay(
+                        editor: editor,
+                        settings: settings,
+                        photoSize: photo.fullSize,
+                        layout: MetalCanvas.layout(imageExtent: image.extent, viewSize: proxy.size, displayScale: displayScale),
+                        displayScale: displayScale
+                    )
+                }
             }
             switch editor.state {
             case .empty:

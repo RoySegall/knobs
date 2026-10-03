@@ -10,7 +10,7 @@ struct ActivePlugin {
 public struct RenderRequest: Sendable {
     /// Longest edge in pixels; nil renders full resolution.
     public var maxPixelSize: Int?
-    /// Plugin ids to leave out, e.g. geometry while the crop tool is open.
+    /// Plugin ids to leave out of the render.
     public var skipping: Set<String>
 
     public init(maxPixelSize: Int? = nil, skipping: Set<String> = []) {

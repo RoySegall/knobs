@@ -36,6 +36,19 @@ struct KnobsCommands: Commands {
             Button("Reset All Edits") { editor.resetAll() }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
             Divider()
+            Button(editor.isCropping ? "Done Cropping" : "Crop & Straighten") { editor.toggleCrop() }
+                .keyboardShortcut("r", modifiers: [])
+                .disabled(editor.photo == nil)
+            Button("Apply Crop") { editor.commitCrop() }
+                .keyboardShortcut(.return, modifiers: [])
+                .disabled(!editor.isCropping)
+            Button("Cancel Crop") { editor.cancelCrop() }
+                .keyboardShortcut(.escape, modifiers: [])
+                .disabled(!editor.isCropping)
+            Button("Swap Crop Orientation") { editor.swapCropOrientation() }
+                .keyboardShortcut("x", modifiers: [])
+                .disabled(!editor.isCropping)
+            Divider()
             ForEach(ExportFormat.allCases, id: \.self) { format in
                 Button("Export \(format.title)…") { Exporter.run(editor: editor, format: format) }
             }
