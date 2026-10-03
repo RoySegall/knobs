@@ -1,0 +1,35 @@
+KnobsKit/Engine/Metal/Display.metal
+  s_7c21c36c2cbc9b::t_73f10e9914e43a 1-28
+KnobsKit/Engine/Photo.swift
+  s_7c21c36c2cbc9b::t_0f66014470a103 54-57,59-63
+KnobsKit/Engine/RenderEngine.swift
+  s_7c21c36c2cbc9b::t_ad9847276ddade 91,94-107
+KnobsKit/Plugins/Brightness/Brightness.metal
+  s_7c21c36c2cbc9b::t_2bdacb2f947745 1-18
+KnobsKit/Plugins/Brightness/BrightnessPlugin.swift
+  s_7c21c36c2cbc9b::t_4370b141685e80 1-26
+KnobsKitTests/EngineTests.swift
+  s_7c21c36c2cbc9b::t_4f404e4f1790b8 153-184
+KnobsKitTests/Plugins/BrightnessTests.swift
+  s_7c21c36c2cbc9b::t_694c8a58cea313 1-39
+KnobsKitTests/PreviewSessionTests.swift
+  s_7c21c36c2cbc9b::t_958161dad1379e 12
+KnobsKitTests/Support/TestImages.swift
+  s_7c21c36c2cbc9b::t_957a034464bbe6 26-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "34577a2d439f15e296d3c5b8da5f70d5dd4c9d66",
+  "prompts": {},
+  "sessions": {
+    "s_7c21c36c2cbc9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6cd0b42-41dd-4208-8c73-230afb58eb8a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Roy Segall <roy@segall.io>"
+    }
+  }
+}
