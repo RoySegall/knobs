@@ -15,6 +15,9 @@ public protocol KnobPlugin: Sendable {
     /// Position inside the panel when it differs from the processing order. Defaults to `order`.
     var panelOrder: Int { get }
     var params: [KnobParam] { get }
+    /// True for a plugin whose default is itself a look, such as a camera profile, so the engine runs it
+    /// untouched. Such a plugin is exempt from the identity-at-defaults contract. Defaults to false.
+    var runsAtDefaults: Bool { get }
 
     /// Tunes the RAW decoder. Return false to be handled by `apply` instead.
     func configure(raw: CIRAWFilter, values: KnobValues, context: RenderContext) -> Bool
@@ -26,6 +29,10 @@ public protocol KnobPlugin: Sendable {
 extension KnobPlugin {
     public var panelOrder: Int {
         order
+    }
+
+    public var runsAtDefaults: Bool {
+        false
     }
 
     public func configure(raw: CIRAWFilter, values: KnobValues, context: RenderContext) -> Bool {

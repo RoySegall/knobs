@@ -61,10 +61,14 @@ public struct RenderContext: Sendable {
     public let source: Source
     public let framing: Framing
 
-    public init(scale: Double, fullSize: CGSize, source: Source, framing: Framing = .cropped) {
+    /// Measured once per photo; see `PhotoAnalysis`.
+    public let analysis: PhotoAnalysis
+
+    public init(scale: Double, fullSize: CGSize, source: Source, framing: Framing = .cropped, analysis: PhotoAnalysis = PhotoAnalysis()) {
         self.scale = scale
         self.fullSize = fullSize
         self.source = source
         self.framing = framing
+        self.analysis = analysis
     }
 }

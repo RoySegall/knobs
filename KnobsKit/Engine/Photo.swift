@@ -15,6 +15,7 @@ public struct Photo: Sendable {
     public let url: URL
     public let source: Source
     public let fullSize: CGSize
+    public let analysis: PhotoAnalysis
 
     public static let fileExtensions: Set<String> = [
         "jpg", "jpeg", "heic", "heif", "png", "tif", "tiff", "webp",
@@ -28,7 +29,9 @@ public struct Photo: Sendable {
             guard let filter = CIRAWFilter(imageData: data, identifierHint: type.identifier),
                   let image = filter.outputImage
             else { throw LoadError.unreadable(url) }
-            return Photo(url: url, source: .raw(data: data, typeIdentifier: type.identifier), fullSize: image.extent.size)
+            let source = Source.raw(data: data, typeIdentifier: type.identifier)
+            let size = image.extent.size
+            return Photo(url: url, source: source, fullSize: size, analysis: PhotoAnalysis.measure(source: source, fullSize: size))
         }
         guard let image = CIImage(contentsOf: url, options: [.applyOrientationProperty: true]) else {
             throw LoadError.unreadable(url)
@@ -38,10 +41,11 @@ public struct Photo: Sendable {
         return Photo(url: url, source: .bitmap(normalized), fullSize: normalized.extent.size)
     }
 
-    public init(url: URL, source: Source, fullSize: CGSize) {
+    public init(url: URL, source: Source, fullSize: CGSize, analysis: PhotoAnalysis = PhotoAnalysis()) {
         self.url = url
         self.source = source
         self.fullSize = fullSize
+        self.analysis = analysis
     }
 
     public var sourceKind: RenderContext.Source {

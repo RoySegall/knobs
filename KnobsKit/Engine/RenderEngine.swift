@@ -80,7 +80,7 @@ public final class RenderEngine: Sendable {
     public func image(photo: Photo, document: EditDocument, request: RenderRequest) -> CIImage {
         let longest = max(photo.fullSize.width, photo.fullSize.height)
         let scale = request.maxPixelSize.map { min(1, Double($0) / longest) } ?? 1
-        let context = RenderContext(scale: scale, fullSize: photo.fullSize, source: photo.sourceKind)
+        let context = RenderContext(scale: scale, fullSize: photo.fullSize, source: photo.sourceKind, analysis: photo.analysis)
         var active = active(document: document, skipping: request.skipping)
 
         let base: CIImage
@@ -105,7 +105,8 @@ public final class RenderEngine: Sendable {
         plugins.compactMap { plugin in
             guard !skipping.contains(plugin.id) else { return nil }
             let values = KnobValues(params: plugin.params, stored: document.values(for: plugin.id))
-            return values.isNeutral(params: plugin.params) ? nil : ActivePlugin(plugin: plugin, values: values)
+            let skip = values.isNeutral(params: plugin.params) && !plugin.runsAtDefaults
+            return skip ? nil : ActivePlugin(plugin: plugin, values: values)
         }
     }
 

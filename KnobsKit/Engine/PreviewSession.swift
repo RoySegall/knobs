@@ -30,12 +30,12 @@ public final class PreviewSession: @unchecked Sendable {
     }
 
     public var context: RenderContext {
-        RenderContext(scale: scale, fullSize: photo.fullSize, source: photo.sourceKind)
+        RenderContext(scale: scale, fullSize: photo.fullSize, source: photo.sourceKind, analysis: photo.analysis)
     }
 
     public func image(document: EditDocument, skipping: Set<String>, framing: Framing = .cropped) -> CIImage {
         let active = engine.active(document: document, skipping: skipping)
-        let context = RenderContext(scale: scale, fullSize: photo.fullSize, source: photo.sourceKind, framing: framing)
+        let context = RenderContext(scale: scale, fullSize: photo.fullSize, source: photo.sourceKind, framing: framing, analysis: photo.analysis)
         if let bitmapBase {
             return engine.process(image: bitmapBase, plugins: active, context: context)
         }

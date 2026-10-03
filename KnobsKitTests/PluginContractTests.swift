@@ -72,6 +72,7 @@ struct PluginContractTests {
         @Test("should leave the image untouched at default values", arguments: PluginContractTests.ids)
         func identity(id: String) throws {
             let plugin = try PluginContractTests.plugin(id)
+            guard !plugin.runsAtDefaults else { return }
             let input = TestImages.detail()
             let values = KnobValues(params: plugin.params, stored: [:])
             let output = plugin.apply(image: input, values: values, context: TestImages.context(for: input))

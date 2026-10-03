@@ -18,3 +18,15 @@ struct PreviewSessionTests {
         }
     }
 }
+
+@Suite("PhotoAnalysis")
+struct PhotoAnalysisTests {
+    @Suite("measure")
+    struct Measure {
+        @Test("should report white as the clip level of a bitmap")
+        func bitmap() {
+            let image = TestImages.gray(level: 0.5)
+            #expect(PhotoAnalysis.measure(source: .bitmap(image), fullSize: image.extent.size).clipLevel == 1)
+        }
+    }
+}
