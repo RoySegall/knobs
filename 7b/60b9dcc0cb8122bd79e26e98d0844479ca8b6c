@@ -1,0 +1,19 @@
+KnobsRender/main.swift
+  s_7c21c36c2cbc9b::t_847ed288b75986 141-147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7b60b9dcc0cb8122bd79e26e98d0844479ca8b6c",
+  "prompts": {},
+  "sessions": {
+    "s_7c21c36c2cbc9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6cd0b42-41dd-4208-8c73-230afb58eb8a",
+        "model": "unknown"
+      },
+      "human_author": "Roy Segall <roy@segall.io>"
+    }
+  }
+}
