@@ -11,7 +11,8 @@ scripts/test.sh [derived-data-dir]        # unit tests
 scripts/render.sh [--derived dir] in.heic out.jpg --size 1200 --side-by-side dehaze.amount=60
 ```
 
-`knobs-render --list` prints every plugin param. Parallel checkouts pass their own derived-data dir.
+`knobs-render --list` prints every param; `scripts/render.sh --bench in.heic plugin.param=value` times a preview frame.
+Parallel checkouts pass their own derived-data dir.
 
 ## Layout
 
