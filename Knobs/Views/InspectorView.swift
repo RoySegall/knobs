@@ -8,7 +8,7 @@ struct InspectorView: View {
     private var panels: [(panel: Panel, plugins: [any KnobPlugin])] {
         let visible = editor.engine.plugins.filter { $0.params.contains { $0.presentation == .inspector } }
         return Dictionary(grouping: visible) { $0.panel }
-            .map { (panel: $0.key, plugins: $0.value.sorted { $0.order < $1.order }) }
+            .map { (panel: $0.key, plugins: $0.value.sorted { $0.panelOrder < $1.panelOrder }) }
             .sorted { $0.panel.order < $1.panel.order }
     }
 

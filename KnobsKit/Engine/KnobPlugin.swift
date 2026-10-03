@@ -10,8 +10,10 @@ public protocol KnobPlugin: Sendable {
     var title: String { get }
     var panel: Panel { get }
     var stage: Stage { get }
-    /// Position inside both the stage (processing) and the panel (display).
+    /// Position inside the stage (processing), and inside the panel unless `panelOrder` says otherwise.
     var order: Int { get }
+    /// Position inside the panel when it differs from the processing order. Defaults to `order`.
+    var panelOrder: Int { get }
     var params: [KnobParam] { get }
 
     /// Tunes the RAW decoder. Return false to be handled by `apply` instead.
@@ -22,6 +24,10 @@ public protocol KnobPlugin: Sendable {
 }
 
 extension KnobPlugin {
+    public var panelOrder: Int {
+        order
+    }
+
     public func configure(raw: CIRAWFilter, values: KnobValues, context: RenderContext) -> Bool {
         false
     }
