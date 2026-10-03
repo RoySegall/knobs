@@ -7,6 +7,8 @@ import Observation
 final class LibraryModel {
     private(set) var folder: URL?
     private(set) var items: [URL] = []
+    /// Photos with a sidecar, for the filmstrip badge and "export edited".
+    private(set) var edited: Set<URL> = []
     var selection: URL?
 
     private static let lastFolderKey = "lastFolder"
@@ -35,9 +37,18 @@ final class LibraryModel {
         items = contents
             .filter { Photo.fileExtensions.contains($0.pathExtension.lowercased()) }
             .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+        edited = Set(items.filter { FileManager.default.fileExists(atPath: EditDocument.sidecarURL(for: $0).path) })
         self.folder = folder
         selection = items.first
         UserDefaults.standard.set(folder.path, forKey: Self.lastFolderKey)
+    }
+
+    func mark(url: URL, edited isEdited: Bool) {
+        if isEdited {
+            edited.insert(url)
+        } else {
+            edited.remove(url)
+        }
     }
 
     func step(by offset: Int) {

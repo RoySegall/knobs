@@ -33,6 +33,20 @@ public enum ExportFormat: String, Sendable, CaseIterable {
     }
 }
 
+public struct ExportOptions: Sendable, Equatable {
+    public var format: ExportFormat
+    /// 0...1, for JPEG and HEIC.
+    public var quality: Double
+    /// Longest edge in pixels; nil exports full resolution.
+    public var maxPixelSize: Int?
+
+    public init(format: ExportFormat, quality: Double = 0.92, maxPixelSize: Int? = nil) {
+        self.format = format
+        self.quality = quality
+        self.maxPixelSize = maxPixelSize
+    }
+}
+
 public final class RenderEngine: Sendable {
     public let plugins: [any KnobPlugin]
     public let device: any MTLDevice
@@ -140,10 +154,10 @@ public final class RenderEngine: Sendable {
         return context.createCGImage(image, from: image.extent.integral, format: .RGBA8, colorSpace: displayColorSpace)
     }
 
-    public func export(photo: Photo, document: EditDocument, format: ExportFormat, to url: URL) throws {
-        let image = image(photo: photo, document: document, request: RenderRequest())
-        let quality = [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: 0.92]
-        switch format {
+    public func export(photo: Photo, document: EditDocument, options: ExportOptions, to url: URL) throws {
+        let image = image(photo: photo, document: document, request: RenderRequest(maxPixelSize: options.maxPixelSize))
+        let quality = [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: options.quality]
+        switch options.format {
         case .jpeg:
             try context.writeJPEGRepresentation(of: image, to: url, colorSpace: displayColorSpace, options: quality)
         case .heic:

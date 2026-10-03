@@ -5,6 +5,7 @@ import SwiftUI
 struct ContentView: View {
     @Bindable var library: LibraryModel
     let editor: EditorModel
+    @Bindable var exporter: ExportModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,7 +24,16 @@ struct ContentView: View {
             if let url = library.selection {
                 await editor.open(url: url)
                 await PerfProbe.run(editor: editor)
+                await PerfProbe.runExport(library: library, editor: editor, exporter: exporter)
             }
+        }
+        .onChange(of: editor.document) { _, document in
+            if let url = editor.photo?.url {
+                library.mark(url: url, edited: !document.isEmpty)
+            }
+        }
+        .sheet(item: $exporter.presented) { scope in
+            ExportSheet(exporter: exporter, library: library, editor: editor, scope: scope)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
             editor.flushSave()
@@ -37,9 +47,7 @@ struct ContentView: View {
             Button("Open Folder", systemImage: "folder") { library.chooseFolder() }
         }
         ToolbarItemGroup(placement: .primaryAction) {
-            if case .exporting = editor.exportPhase {
-                ProgressView().controlSize(.small)
-            }
+            exportStatus
             Toggle(
                 "Crop & Straighten",
                 systemImage: "crop.rotate",
@@ -61,12 +69,34 @@ struct ContentView: View {
                 .help("Before / after (\\)")
             Button("Reset All", systemImage: "arrow.counterclockwise") { editor.resetAll() }
                 .disabled(editor.document.isEmpty)
-            Menu("Export", systemImage: "square.and.arrow.up") {
-                ForEach(ExportFormat.allCases, id: \.self) { format in
-                    Button(format.title) { Exporter.run(editor: editor, format: format) }
-                }
+            Button("Export", systemImage: "square.and.arrow.up") { exporter.presented = .current }
+                .help("Export (⌘E)")
+                .disabled(editor.photo == nil)
+        }
+    }
+
+    @ViewBuilder
+    private var exportStatus: some View {
+        switch exporter.phase {
+        case .idle:
+            EmptyView()
+        case .exporting(let done, let total):
+            HStack(spacing: 6) {
+                ProgressView(value: Double(done), total: Double(max(total, 1)))
+                    .frame(width: 70)
+                Text("\(done)/\(total)")
+                    .font(.system(size: 11).monospacedDigit())
+                Button("Stop Export", systemImage: "xmark.circle.fill") { exporter.cancel() }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.plain)
             }
-            .disabled(editor.photo == nil)
+        case .finished(let count, let failed, let folder):
+            Button(failed.isEmpty ? "Exported \(count)" : "Exported \(count), \(failed.count) failed", systemImage: failed.isEmpty ? "checkmark.circle" : "exclamationmark.triangle") {
+                NSWorkspace.shared.activateFileViewerSelecting([folder])
+                exporter.dismiss()
+            }
+            .labelStyle(.titleAndIcon)
+            .help(failed.isEmpty ? "Show in Finder" : "Failed: \(failed.joined(separator: ", "))")
         }
     }
 }

@@ -88,6 +88,24 @@ struct EngineTests {
         }
     }
 
+    @Suite("RenderEngine.export")
+    struct Export {
+        @Test("should write the edited photo at the requested size")
+        func size() throws {
+            let image = TestImages.gray(level: 0.25, size: 64)
+            let photo = Photo(url: URL(fileURLWithPath: "/tmp/gray.png"), source: .bitmap(image), fullSize: image.extent.size)
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID()).jpg")
+            try RenderEngine(plugins: []).export(
+                photo: photo,
+                document: EditDocument(),
+                options: ExportOptions(format: .jpeg, maxPixelSize: 32),
+                to: url
+            )
+            let written = try #require(CIImage(contentsOf: url))
+            #expect(written.extent.size == CGSize(width: 32, height: 32))
+        }
+    }
+
     @Suite("EditDocument")
     struct Document {
         let param = KnobParam.slider(id: "amount", title: "Amount", range: -100...100)

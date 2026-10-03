@@ -39,8 +39,29 @@ enum PerfProbe {
         frames.append(frame)
     }
 
+    /// Exports the folder's edited photos at 1080 px into `<log>.export/` and logs the outcome.
+    static func runExport(library: LibraryModel, editor: EditorModel, exporter: ExportModel) async {
+        guard let logURL, mode == "export" else { return }
+        try? await Task.sleep(for: .seconds(1))
+        let folder = logURL.appendingPathExtension("export")
+        let saved = (exporter.folder, exporter.longEdge, exporter.format)
+        exporter.folder = folder
+        exporter.longEdge = 1080
+        exporter.format = .jpeg
+        let started = CACurrentMediaTime()
+        exporter.start(scope: .edited, library: library, editor: editor)
+        while true {
+            try? await Task.sleep(for: .milliseconds(200))
+            if case .finished = exporter.phase { break }
+        }
+        (exporter.folder, exporter.longEdge, exporter.format) = saved
+        let report = "\(exporter.phase) in \(String(format: "%.1f", CACurrentMediaTime() - started)) s · edited \(library.edited.count)"
+        try? report.write(to: logURL, atomically: true, encoding: .utf8)
+        exporter.dismiss()
+    }
+
     static func run(editor: EditorModel) async {
-        guard let logURL, let plugin = editor.engine.plugin(id: "exposure"), let param = plugin.param("exposure") else { return }
+        guard let logURL, mode != "export", let plugin = editor.engine.plugin(id: "exposure"), let param = plugin.param("exposure") else { return }
         let original = editor.document
         if mode == "undo" {
             await checkUndo(editor: editor, plugin: plugin, param: param, logURL: logURL)

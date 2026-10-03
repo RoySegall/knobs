@@ -18,13 +18,6 @@ final class EditorModel {
         case original
     }
 
-    enum ExportPhase {
-        case idle
-        case exporting
-        case done(URL)
-        case failed(String)
-    }
-
     /// What the canvas is for. Cropping previews the whole straightened photo under the crop overlay.
     /// Each tool keeps its plugin's values from before it opened, for Cancel.
     enum Tool {
@@ -38,7 +31,6 @@ final class EditorModel {
     private(set) var document = EditDocument()
     /// The preview as a Core Image graph; `MetalCanvas` renders it on the next display refresh.
     private(set) var previewImage: CIImage?
-    private(set) var exportPhase = ExportPhase.idle
     private(set) var compare = CompareMode.edited
     private(set) var tool = Tool.none
 
@@ -256,21 +248,6 @@ final class EditorModel {
             guard let plugin = gradientPlugin else { return }
             tool = .none
             replace(values: saved, plugin: plugin)
-        }
-    }
-
-    func export(format: ExportFormat, to url: URL) async {
-        guard let photo else { return }
-        exportPhase = .exporting
-        let engine = engine
-        let document = document
-        do {
-            try await Task.detached(priority: .userInitiated) {
-                try engine.export(photo: photo, document: document, format: format, to: url)
-            }.value
-            exportPhase = .done(url)
-        } catch {
-            exportPhase = .failed(error.localizedDescription)
         }
     }
 
