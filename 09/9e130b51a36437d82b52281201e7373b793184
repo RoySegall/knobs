@@ -1,0 +1,95 @@
+KnobsKitTests/Support/TestImages.swift
+  s_7c21c36c2cbc9b::t_39cdcd85641c06 1-97
+Knobs/Views/InspectorView.swift
+  s_7c21c36c2cbc9b::t_189239d119705a 1-102
+  s_7c21c36c2cbc9b::t_a8b5ce2fec8ea4 103
+Knobs/Controls/KnobSlider.swift
+  s_7c21c36c2cbc9b::t_a769241cf1ec57 1-98
+CLAUDE.md
+  s_7c21c36c2cbc9b::t_514e5ead826f05 1-41
+Knobs/Controls/CurveEditor.swift
+  s_7c21c36c2cbc9b::t_3d66540d932a16 1-24
+Knobs/Views/FilmstripView.swift
+  s_7c21c36c2cbc9b::t_98b92855201c36 1-47
+Knobs/Controls/ParamControl.swift
+  s_7c21c36c2cbc9b::t_6069c018378657 1-59
+KnobsKit/Engine/KnobValue.swift
+  s_7c21c36c2cbc9b::t_d0e8f272cecc65 1-118
+Knobs/KnobsApp.swift
+  s_7c21c36c2cbc9b::t_9d5be8b86abd16 1-44
+KnobsKit/Engine/Photo.swift
+  s_7c21c36c2cbc9b::t_2a33c6dd3953a9 1-58
+KnobsKit/Engine/EditDocument.swift
+  s_7c21c36c2cbc9b::t_0f83ef7ea5b13b 1-59
+KnobsKit/Engine/Stage.swift
+  s_7c21c36c2cbc9b::t_7d1902057d33ad 3-62
+  s_7c21c36c2cbc9b::t_9f0e685295c4c6 1-2
+KnobsKit/Engine/Metal/KnobsKernels.h
+  s_7c21c36c2cbc9b::t_54cbdf9846a5e0 1-32
+scripts/generate.sh
+  s_7c21c36c2cbc9b::t_a77d08e24af982 1-6
+KnobsKit/Plugins/Exposure/ExposurePlugin.swift
+  s_7c21c36c2cbc9b::t_6970cc04e100aa 1-25
+scripts/generate-registry.sh
+  s_7c21c36c2cbc9b::t_c914cbcdab3db6 1-24
+scripts/render.sh
+  s_7c21c36c2cbc9b::t_ca37c21650ee51 1-9
+.gitignore
+  s_7c21c36c2cbc9b::t_3dca6a46278674 1-7
+KnobsKit/Engine/KnobParam.swift
+  s_7c21c36c2cbc9b::t_f26f0fae552649 18-25
+  s_7c21c36c2cbc9b::t_4bc069b4ee0891 1-17,26-128
+  s_7c21c36c2cbc9b::t_91b87c6d0ffafb 129-139
+KnobsKit/Plugins/Exposure/Exposure.metal
+  s_7c21c36c2cbc9b::t_088b7724b67740 1-11
+KnobsKitTests/EngineTests.swift
+  s_7c21c36c2cbc9b::t_69fe428f711411 1-151
+  s_7c21c36c2cbc9b::t_3c6e14122aa71d 152
+Knobs/Models/LibraryModel.swift
+  s_7c21c36c2cbc9b::t_0bdefb9cbe45c2 1-52
+Knobs/Models/EditorModel.swift
+  s_7c21c36c2cbc9b::t_8485ae38543770 1-187
+KnobsRender/main.swift
+  s_7c21c36c2cbc9b::t_2985c455e969fe 1-126
+scripts/test.sh
+  s_7c21c36c2cbc9b::t_1d66b4169e4f2a 1-8
+Knobs/Controls/WheelControl.swift
+  s_7c21c36c2cbc9b::t_c640c70296809f 1-24
+project.yml
+  s_7c21c36c2cbc9b::t_6812b93a3d0878 1-90
+Knobs/Models/Thumbnails.swift
+  s_7c21c36c2cbc9b::t_5b3921eaa752e2 1-18
+README.md
+  s_7c21c36c2cbc9b::t_b07bce4c1a5831 1-12
+KnobsKit/Engine/KnobPlugin.swift
+  s_7c21c36c2cbc9b::t_13ce17ae0ef0c5 1-32
+KnobsKitTests/PluginContractTests.swift
+  s_7c21c36c2cbc9b::t_14e4316b580fde 1-93
+  s_7c21c36c2cbc9b::t_c46cdab83acfc4 94
+Knobs/Views/ContentView.swift
+  s_7c21c36c2cbc9b::t_4ffa4c39a6734e 1-57
+KnobsKit/Engine/RenderEngine.swift
+  s_7c21c36c2cbc9b::t_4a8e6212f9bfbb 1-94
+KnobsKit/Engine/KernelLibrary.swift
+  s_7c21c36c2cbc9b::t_5c6c93cc600980 1-42
+Knobs/Models/Exporter.swift
+  s_7c21c36c2cbc9b::t_53b09943436f6b 1-25
+Knobs/Views/CanvasView.swift
+  s_7c21c36c2cbc9b::t_d5a50ec0debea4 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "099e130b51a36437d82b52281201e7373b793184",
+  "prompts": {},
+  "sessions": {
+    "s_7c21c36c2cbc9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6cd0b42-41dd-4208-8c73-230afb58eb8a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Roy Segall <roy@segall.io>"
+    }
+  }
+}
