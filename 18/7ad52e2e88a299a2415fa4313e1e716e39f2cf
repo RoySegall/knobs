@@ -1,0 +1,33 @@
+Knobs/Debug/PerfProbe.swift
+  s_7c21c36c2cbc9b::t_bbc771ac456b2a 1-67
+Knobs/Models/EditorModel.swift
+  s_7c21c36c2cbc9b::t_12159617491a0e 63-64,67,97-101,139-141,146-154
+Knobs/Views/ContentView.swift
+  s_7c21c36c2cbc9b::t_35e0721d69365f 25
+Knobs/Views/MetalCanvas.swift
+  s_7c21c36c2cbc9b::t_3da7b65b9fccc3 59-60,63-65,81-91
+KnobsKit/Engine/PreviewSession.swift
+  s_7c21c36c2cbc9b::t_d8efbaabcf0258 4-5,10-12,17-23,25-28,51-54
+KnobsKit/Engine/RAWBaseline.swift
+  s_7c21c36c2cbc9b::t_7b07f176a99e46 1-39
+KnobsKit/Engine/RenderEngine.swift
+  s_7c21c36c2cbc9b::t_2cc3a4bca6bd87 40-41,47,49,96-117
+KnobsKitTests/PreviewSessionTests.swift
+  s_7c21c36c2cbc9b::t_513535f30c4be2 1-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "187ad52e2e88a299a2415fa4313e1e716e39f2cf",
+  "prompts": {},
+  "sessions": {
+    "s_7c21c36c2cbc9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6cd0b42-41dd-4208-8c73-230afb58eb8a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Roy Segall <roy@segall.io>"
+    }
+  }
+}
