@@ -25,6 +25,13 @@ final class EditorModel {
         case failed(String)
     }
 
+    /// What the canvas is for. Cropping previews the whole straightened photo under the crop overlay.
+    enum Tool {
+        case none
+        /// Keeps the crop's values from before the tool opened, for Cancel.
+        case crop(restoring: [String: KnobValue])
+    }
+
     let engine: RenderEngine
     private(set) var state = LoadState.empty
     private(set) var document = EditDocument()
@@ -32,6 +39,7 @@ final class EditorModel {
     private(set) var previewImage: CIImage?
     private(set) var exportPhase = ExportPhase.idle
     private(set) var compare = CompareMode.edited
+    private(set) var tool = Tool.none
 
     /// Plugins left out of the preview, e.g. the crop while its tool is open.
     var skipping: Set<String> = [] {
@@ -53,6 +61,7 @@ final class EditorModel {
 
     func open(url: URL) async {
         flushSave()
+        tool = .none
         state = .loading(url)
         session = nil
         previewImage = nil
@@ -64,6 +73,7 @@ final class EditorModel {
             state = .ready(photo)
             session = engine.previewSession(photo: photo, maxPixelSize: maxPixelSize(for: photo))
             refresh()
+            matchResolution(now: true)
         } catch {
             state = .failed(url, message: error.localizedDescription)
         }
@@ -82,6 +92,16 @@ final class EditorModel {
         documentChanged()
     }
 
+    /// Several of one plugin's values with a single refresh, e.g. a crop rect's four edges.
+    func set(values: [String: KnobValue], plugin: any KnobPlugin) {
+        for param in plugin.params {
+            if let value = values[param.id] {
+                document.set(value: value, param: param, plugin: plugin.id)
+            }
+        }
+        documentChanged()
+    }
+
     func reset(plugin: any KnobPlugin) {
         document.reset(plugin: plugin.id)
         documentChanged()
@@ -95,6 +115,44 @@ final class EditorModel {
     func toggleCompare() {
         compare = compare == .edited ? .original : .edited
         refresh()
+        matchResolution(now: true)
+    }
+
+    // MARK: Crop tool
+
+    var cropPlugin: (any KnobPlugin)? {
+        engine.plugin(id: "crop")
+    }
+
+    var isCropping: Bool {
+        if case .crop = tool { true } else { false }
+    }
+
+    func toggleCrop() {
+        if isCropping { commitCrop() } else { beginCrop() }
+    }
+
+    func beginCrop() {
+        guard photo != nil, !isCropping, let crop = cropPlugin else { return }
+        tool = .crop(restoring: document.values(for: crop.id))
+        compare = .edited
+        refresh()
+        matchResolution(now: true)
+    }
+
+    func commitCrop() {
+        guard isCropping else { return }
+        tool = .none
+        refresh()
+        matchResolution(now: true)
+    }
+
+    func cancelCrop() {
+        guard case .crop(let saved) = tool, let crop = cropPlugin else { return }
+        tool = .none
+        document.reset(plugin: crop.id)
+        set(values: saved, plugin: crop)
+        matchResolution(now: true)
     }
 
     func export(format: ExportFormat, to url: URL) async {
@@ -125,27 +183,64 @@ final class EditorModel {
     func updateViewport(pixels: CGSize) {
         guard pixels != viewport else { return }
         viewport = pixels
+        rebuildSession(after: .milliseconds(250))
+    }
+
+    private func rebuildSession(after delay: Duration?) {
         resizeTask?.cancel()
+        resizeTask = nil
+        guard let delay else {
+            rebuildSession()
+            return
+        }
         resizeTask = Task {
-            try? await Task.sleep(for: .milliseconds(250))
-            guard !Task.isCancelled, let photo else { return }
-            session = engine.previewSession(photo: photo, maxPixelSize: maxPixelSize(for: photo))
-            refresh()
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled else { return }
+            rebuildSession()
         }
     }
 
+    private func rebuildSession() {
+        guard let photo else { return }
+        session = engine.previewSession(photo: photo, maxPixelSize: maxPixelSize(for: photo))
+        refresh()
+    }
+
+    /// Sized so the edited output, crop included, fills the viewport rather than being upscaled by the canvas.
     private func maxPixelSize(for photo: Photo) -> Int {
-        let fit = min(viewport.width / photo.fullSize.width, viewport.height / photo.fullSize.height)
+        let output = outputSize ?? photo.fullSize
+        let fit = min(viewport.width / output.width, viewport.height / output.height)
         return Int((max(photo.fullSize.width, photo.fullSize.height) * fit).rounded())
     }
 
+    /// The edited output in full-resolution pixels, measured off the current preview.
+    private var outputSize: CGSize? {
+        guard compare == .edited, let session, let extent = previewImage?.extent, extent.width >= 1, extent.height >= 1 else { return nil }
+        return CGSize(width: extent.width / session.scale, height: extent.height / session.scale)
+    }
+
+    /// A crop changes the output's size; rebuild when the canvas would upscale the preview by more than 3%,
+    /// or downscale it by more than 15% every frame. `now` skips the debounce for one-off actions.
+    private func matchResolution(now: Bool) {
+        guard let photo, let session, outputSize != nil else { return }
+        let wanted = min(1, Double(maxPixelSize(for: photo)) / max(photo.fullSize.width, photo.fullSize.height))
+        let ratio = wanted / session.scale
+        guard ratio > 1.03 || ratio < 0.85 else { return }
+        rebuildSession(after: now ? nil : .milliseconds(250))
+    }
+
     private func refresh() {
-        previewImage = session?.image(document: compare == .original ? EditDocument() : document, skipping: skipping)
+        previewImage = session?.image(
+            document: compare == .original ? EditDocument() : document,
+            skipping: skipping,
+            framing: isCropping ? .uncropped : .cropped
+        )
     }
 
     private func documentChanged() {
         refresh()
         scheduleSave()
+        matchResolution(now: false)
     }
 
     private func scheduleSave() {
