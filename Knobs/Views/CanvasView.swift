@@ -5,7 +5,9 @@ struct CanvasView: View {
 
     var body: some View {
         ZStack {
-            Color(white: 0.09)
+            MetalCanvas(image: editor.previewImage, engine: editor.engine) { viewport in
+                editor.updateViewport(pixels: viewport)
+            }
             switch editor.state {
             case .empty:
                 ContentUnavailableView("No Photo", systemImage: "photo.on.rectangle", description: Text("Open a folder with ⌘O"))
@@ -14,15 +16,7 @@ struct CanvasView: View {
             case .failed(let url, let message):
                 ContentUnavailableView(url.lastPathComponent, systemImage: "exclamationmark.triangle", description: Text(message))
             case .ready:
-                if let preview = editor.preview {
-                    Image(decorative: preview, scale: 1)
-                        .resizable()
-                        .interpolation(.high)
-                        .aspectRatio(contentMode: .fit)
-                        .padding(20)
-                } else {
-                    ProgressView().controlSize(.small)
-                }
+                EmptyView()
             }
         }
         .overlay(alignment: .topLeading) {

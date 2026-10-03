@@ -1,4 +1,4 @@
-import CoreGraphics
+import CoreImage
 import Foundation
 import KnobsKit
 import Observation
@@ -25,28 +25,23 @@ final class EditorModel {
         case failed(String)
     }
 
-    private enum RenderPhase {
-        case idle
-        case rendering
-        /// A render is running and the inputs changed since it started.
-        case stale
-    }
-
     let engine: RenderEngine
     private(set) var state = LoadState.empty
     private(set) var document = EditDocument()
-    private(set) var preview: CGImage?
+    /// The preview as a Core Image graph; `MetalCanvas` renders it on the next display refresh.
+    private(set) var previewImage: CIImage?
     private(set) var exportPhase = ExportPhase.idle
     private(set) var compare = CompareMode.edited
 
     /// Plugins left out of the preview, e.g. the crop while its tool is open.
     var skipping: Set<String> = [] {
-        didSet { requestRender() }
+        didSet { refresh() }
     }
 
-    private var renderPhase = RenderPhase.idle
+    private var session: PreviewSession?
+    private var viewport = CGSize(width: 2048, height: 2048)
+    private var resizeTask: Task<Void, Never>?
     private var saveTask: Task<Void, Never>?
-    private let previewSize = 2048
 
     init(engine: RenderEngine) {
         self.engine = engine
@@ -59,14 +54,16 @@ final class EditorModel {
     func open(url: URL) async {
         flushSave()
         state = .loading(url)
-        preview = nil
+        session = nil
+        previewImage = nil
         do {
             let photo = try await Task.detached(priority: .userInitiated) { try Photo.load(url: url) }.value
             guard case .loading(let current) = state, current == url else { return }
             document = Self.loadDocument(for: url)
             compare = .edited
             state = .ready(photo)
-            requestRender()
+            session = engine.previewSession(photo: photo, maxPixelSize: maxPixelSize(for: photo))
+            refresh()
         } catch {
             state = .failed(url, message: error.localizedDescription)
         }
@@ -97,7 +94,7 @@ final class EditorModel {
 
     func toggleCompare() {
         compare = compare == .edited ? .original : .edited
-        requestRender()
+        refresh()
     }
 
     func export(format: ExportFormat, to url: URL) async {
@@ -124,8 +121,30 @@ final class EditorModel {
         }
     }
 
+    /// Rebuilds the session at the new size once a resize settles; the canvas scales the old one meanwhile.
+    func updateViewport(pixels: CGSize) {
+        guard pixels != viewport else { return }
+        viewport = pixels
+        resizeTask?.cancel()
+        resizeTask = Task {
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled, let photo else { return }
+            session = engine.previewSession(photo: photo, maxPixelSize: maxPixelSize(for: photo))
+            refresh()
+        }
+    }
+
+    private func maxPixelSize(for photo: Photo) -> Int {
+        let fit = min(viewport.width / photo.fullSize.width, viewport.height / photo.fullSize.height)
+        return Int((max(photo.fullSize.width, photo.fullSize.height) * fit).rounded())
+    }
+
+    private func refresh() {
+        previewImage = session?.image(document: compare == .original ? EditDocument() : document, skipping: skipping)
+    }
+
     private func documentChanged() {
-        requestRender()
+        refresh()
         scheduleSave()
     }
 
@@ -149,39 +168,6 @@ final class EditorModel {
             let sidecar = EditDocument.sidecarURL(for: url)
             try? FileManager.default.moveItem(at: sidecar, to: sidecar.appendingPathExtension("corrupt"))
             return EditDocument()
-        }
-    }
-
-    // Latest wins: at most one render runs, and one more follows if inputs changed meanwhile.
-    private func requestRender() {
-        switch renderPhase {
-        case .idle: startRender()
-        case .rendering: renderPhase = .stale
-        case .stale: break
-        }
-    }
-
-    private func startRender() {
-        guard let photo else {
-            renderPhase = .idle
-            return
-        }
-        renderPhase = .rendering
-        let engine = engine
-        let document = compare == .original ? EditDocument() : document
-        let request = RenderRequest(maxPixelSize: previewSize, skipping: skipping)
-        Task {
-            let image = await Task.detached(priority: .userInitiated) {
-                engine.cgImage(photo: photo, document: document, request: request)
-            }.value
-            if self.photo?.url == photo.url {
-                preview = image
-            }
-            if renderPhase == .stale {
-                startRender()
-            } else {
-                renderPhase = .idle
-            }
         }
     }
 }

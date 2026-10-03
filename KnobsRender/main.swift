@@ -1,6 +1,7 @@
 import CoreImage
 import Foundation
 import KnobsKit
+import Metal
 
 // Renders a photo through the plugin pipeline, for checking a knob's look without the app.
 let usage = """
@@ -42,6 +43,47 @@ func parse(text: String, param: KnobParam) -> KnobValue? {
         let parts = text.split(separator: ",").compactMap { Double($0) }
         return parts.count == 2 ? .wheel(Wheel(hue: parts[0], amount: parts[1])) : nil
     }
+}
+
+// knobs-render --bench <input> [frames]: times preview renders while exposure moves, like a slider drag.
+if arguments.first == "--bench", arguments.count >= 2 {
+    let photo = try Photo.load(url: URL(fileURLWithPath: arguments[1]))
+    let frames = arguments.count > 2 ? Int(arguments[2]) ?? 30 : 30
+    let param = engine.plugin(id: "exposure")!.param("exposure")!
+    let session = engine.previewSession(photo: photo, maxPixelSize: 2048)
+    let queue = engine.device.makeCommandQueue()!
+    let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: 2048, height: 2048, mipmapped: false)
+    descriptor.usage = [.shaderWrite, .renderTarget]
+    descriptor.storageMode = .private
+    let texture = engine.device.makeTexture(descriptor: descriptor)!
+
+    func measure(_ label: String, render: (EditDocument) -> Void) {
+        var times: [Double] = []
+        for frame in 0..<frames {
+            var document = EditDocument()
+            document.set(value: .number(Double(frame) / Double(frames)), param: param, plugin: "exposure")
+            let start = Date()
+            render(document)
+            times.append(Date().timeIntervalSince(start) * 1000)
+        }
+        let sorted = times.dropFirst().sorted()
+        print(String(format: "%@  first %.1f ms · median %.1f ms · p90 %.1f ms", label, times[0], sorted[sorted.count / 2], sorted[sorted.count * 9 / 10]))
+    }
+
+    measure("old: full decode + CGImage") { document in
+        _ = engine.cgImage(photo: photo, document: document, request: RenderRequest(maxPixelSize: 2048))
+    }
+    measure("session + CGImage          ") { document in
+        _ = session.cgImage(document: document, skipping: [])
+    }
+    measure("session + GPU texture      ") { document in
+        let buffer = queue.makeCommandBuffer()!
+        let destination = CIRenderDestination(mtlTexture: texture, commandBuffer: buffer)
+        _ = try? engine.context.startTask(toRender: session.image(document: document, skipping: []), to: destination)
+        buffer.commit()
+        buffer.waitUntilCompleted()
+    }
+    exit(0)
 }
 
 if arguments.first == "--list" {
