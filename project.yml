@@ -41,6 +41,8 @@ targets:
     sources:
       - path: Knobs
         type: syncedFolder
+      # A synced folder gets no resources phase from xcodegen, so the asset catalog lives outside it.
+      - path: KnobsResources
     dependencies:
       - target: KnobsKit
     settings:
@@ -51,6 +53,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Knobs
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.photography
         SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   knobs-render:
     type: tool
