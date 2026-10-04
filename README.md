@@ -72,3 +72,7 @@ sliders. See [CLAUDE.md](CLAUDE.md) for the plugin contract and the architecture
 A personal tool, built in a weekend with [Claude Code](https://claude.com/claude-code). Mac only for now;
 the engine (`KnobsKit`) is platform-neutral, so an iPhone app can follow. Known gaps are listed in
 [CLAUDE.md](CLAUDE.md#known-issues).
+
+## License
+
+[WTFPL](LICENSE). Do what the fuck you want to.
