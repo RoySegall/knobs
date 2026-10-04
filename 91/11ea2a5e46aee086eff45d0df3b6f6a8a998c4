@@ -1,0 +1,19 @@
+scripts/package.sh
+  s_7c21c36c2cbc9b::t_b770debf1df33d 3-5,11-16,19-27,36-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9111ea2a5e46aee086eff45d0df3b6f6a8a998c4",
+  "prompts": {},
+  "sessions": {
+    "s_7c21c36c2cbc9b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6cd0b42-41dd-4208-8c73-230afb58eb8a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Roy Segall <roy@segall.io>"
+    }
+  }
+}
