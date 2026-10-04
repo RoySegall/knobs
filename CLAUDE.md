@@ -9,6 +9,7 @@ photo, runs the plugins in stage order and renders. It knows nothing about expos
 scripts/generate.sh                    # plugin registry + Xcode project (both gitignored). Run after cloning.
 scripts/test.sh [derived-data-dir]     # unit tests (Debug)
 scripts/install.sh                     # Release build → ~/Applications/Knobs.app, the one copy to run
+scripts/package.sh                     # Release build → dist/Knobs-<version>.dmg (version: MARKETING_VERSION in project.yml)
 scripts/render.sh in.ARW out.jpg --size 1200 --side-by-side dehaze.amount=60
 ```
 

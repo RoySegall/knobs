@@ -41,7 +41,8 @@ scripts/install.sh      # Release build, installed as ~/Applications/Knobs.app
 open ~/Applications/Knobs.app
 ```
 
-`scripts/test.sh` runs the test suite. `open Knobs.xcodeproj` works too after `scripts/generate.sh`.
+`scripts/package.sh` makes `dist/Knobs-<version>.dmg`. The app is ad-hoc signed, not notarized: on another
+Mac, right-click › Open it the first time. `scripts/test.sh` runs the test suite. `open Knobs.xcodeproj` works too after `scripts/generate.sh`.
 
 ## Shortcuts
 
